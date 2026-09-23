@@ -64,6 +64,7 @@ export function QuickActionsBar() {
       icon: Code2,
       color: "from-rose-500 to-pink-600",
       description: "Log a LeetCode or GFG problem to your practice revision queue.",
+      href: "/dashboard/placement?action=add",
     },
     {
       id: "find_team",

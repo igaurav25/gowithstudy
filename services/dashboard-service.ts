@@ -3,6 +3,7 @@ import { ProfileService, StudentProfileData } from "@/services/profile-service";
 import { NotesService } from "@/services/notes-service";
 import { TimetableService } from "@/services/timetable-service";
 import { AssignmentsService } from "@/services/assignments-service";
+import { DSAService } from "@/services/dsa-service";
 
 export interface ClassScheduleItem {
   id: string;
@@ -147,20 +148,22 @@ export const DashboardService = {
       },
     ];
 
+    const dsaStats = await DSAService.getDSAStats(userId);
+
     return {
       greeting: this.getGreeting(profile.name),
       student: profile,
       attendanceRate: 88,
       assignmentCompletionRate: Math.round(assignmentStats.completionRate) || 92,
-      studyStreakDays: 14,
-      dsaSolvedCount: 168,
-      dsaTotalCount: 250,
-      dsaCategories: [
-        { name: "Dynamic Programming", solved: 38, total: 50, pct: 76 },
-        { name: "Trees & Binary Search", solved: 42, total: 45, pct: 93 },
-        { name: "Graphs (BFS/DFS)", solved: 30, total: 40, pct: 75 },
-        { name: "Arrays & Strings", solved: 58, total: 60, pct: 96 },
-      ],
+      studyStreakDays: dsaStats.streakDays,
+      dsaSolvedCount: dsaStats.totalSolved,
+      dsaTotalCount: dsaStats.totalProblems,
+      dsaCategories: dsaStats.categories.slice(0, 4).map((c) => ({
+        name: c.name,
+        solved: c.solved,
+        total: c.total,
+        pct: c.pct,
+      })),
       jobApplicationsCount: {
         applied: 12,
         interview: 3,

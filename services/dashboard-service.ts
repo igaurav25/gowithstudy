@@ -4,6 +4,7 @@ import { NotesService } from "@/services/notes-service";
 import { TimetableService } from "@/services/timetable-service";
 import { AssignmentsService } from "@/services/assignments-service";
 import { DSAService } from "@/services/dsa-service";
+import { InternshipsService } from "@/services/internships-service";
 
 export interface ClassScheduleItem {
   id: string;
@@ -148,7 +149,10 @@ export const DashboardService = {
       },
     ];
 
-    const dsaStats = await DSAService.getDSAStats(userId);
+    const [dsaStats, internshipStats] = await Promise.all([
+      DSAService.getDSAStats(userId),
+      InternshipsService.getInternshipStats(userId),
+    ]);
 
     return {
       greeting: this.getGreeting(profile.name),
@@ -165,9 +169,9 @@ export const DashboardService = {
         pct: c.pct,
       })),
       jobApplicationsCount: {
-        applied: 12,
-        interview: 3,
-        offer: 1,
+        applied: internshipStats.applied,
+        interview: internshipStats.interview + internshipStats.oaScheduled,
+        offer: internshipStats.offer,
       },
       todayClasses: dynamicClasses,
       upcomingAssignments: dynamicAssignments,

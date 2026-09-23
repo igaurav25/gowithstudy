@@ -57,6 +57,7 @@ export function QuickActionsBar() {
       icon: Briefcase,
       color: "from-sky-500 to-blue-600",
       description: "Add a company internship or full-time application to your pipeline.",
+      href: "/dashboard/internships?action=add",
     },
     {
       id: "add_dsa",

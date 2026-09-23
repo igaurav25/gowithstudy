@@ -8,11 +8,10 @@ import {
   LogOut,
   ShieldAlert,
   UserCheck,
-  Building,
-  BookOpen,
-  Calendar,
-  Sparkles,
+  User,
+  Database,
   ArrowRight,
+  Settings,
 } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -44,8 +43,14 @@ export default async function DashboardPage() {
           </div>
 
           <div className="flex items-center gap-3">
+            <Link href="/dashboard/profile">
+              <Button variant="outline" size="sm">
+                <User className="w-3.5 h-3.5 mr-1.5" />
+                <span>Profile & Settings</span>
+              </Button>
+            </Link>
             <form action={logoutAction}>
-              <Button variant="outline" size="sm" type="submit">
+              <Button variant="ghost" size="sm" type="submit">
                 <LogOut className="w-3.5 h-3.5 mr-1" />
                 <span>Log Out</span>
               </Button>
@@ -71,25 +76,34 @@ export default async function DashboardPage() {
             </p>
           </div>
 
-          <div className="flex flex-col gap-2 w-full sm:w-auto">
+          <div className="flex flex-col sm:flex-row gap-2.5 w-full sm:w-auto">
+            <Link href="/dashboard/profile">
+              <Button variant="gradient" size="sm" className="w-full sm:w-auto">
+                <Settings className="w-3.5 h-3.5 mr-1.5" />
+                <span>Edit Profile</span>
+              </Button>
+            </Link>
             <form action={logoutAllDevicesAction}>
-              <Button variant="ghost" size="sm" className="text-xs text-zinc-500 hover:text-rose-600" type="submit">
+              <Button variant="outline" size="sm" className="w-full sm:w-auto text-xs text-zinc-600 hover:text-rose-600" type="submit">
                 <ShieldAlert className="w-3.5 h-3.5 mr-1" />
-                <span>Revoke All Other Devices</span>
+                <span>Revoke All Devices</span>
               </Button>
             </form>
           </div>
         </div>
 
-        {/* Phase 3 Auth Verification Card */}
+        {/* Database & Prisma Architecture Card */}
         <Card className="border-zinc-200/80 dark:border-zinc-800">
           <CardHeader>
             <div className="flex items-center justify-between">
-              <CardTitle className="text-lg">Session & Security Telemetry</CardTitle>
-              <Badge variant="success">HttpOnly Cookie Protected</Badge>
+              <div className="flex items-center gap-2.5">
+                <Database className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                <CardTitle className="text-lg">Prisma Database & RBAC Telemetry</CardTitle>
+              </div>
+              <Badge variant="success">Prisma Schema v6.19 Active</Badge>
             </div>
             <CardDescription>
-              Verified server-side session payload extracted from cryptographically signed cookie.
+              Normalized relational schema models configured for User, Profile, Sessions, Notes, Timetable, Assignments, and Applications.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -103,7 +117,7 @@ export default async function DashboardPage() {
                 <p className="mt-1 text-sm font-mono text-zinc-900 dark:text-zinc-100">{session.email}</p>
               </div>
               <div className="p-4 rounded-xl border border-zinc-200/80 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/50">
-                <span className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">Current Role</span>
+                <span className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">Role Clearance</span>
                 <p className="mt-1 text-sm font-bold text-indigo-600 dark:text-indigo-400">{session.role}</p>
               </div>
               <div className="p-4 rounded-xl border border-zinc-200/80 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/50">
@@ -112,11 +126,14 @@ export default async function DashboardPage() {
               </div>
             </div>
 
-            <div className="p-4 rounded-xl bg-indigo-50/60 dark:bg-indigo-950/30 border border-indigo-200/80 dark:border-indigo-900/60 flex items-center justify-between text-xs">
+            <div className="p-4 rounded-xl bg-indigo-50/60 dark:bg-indigo-950/30 border border-indigo-200/80 dark:border-indigo-900/60 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
               <span className="text-indigo-900 dark:text-indigo-300 font-medium">
-                Phase 3 (Authentication & Account Security) complete. Ready for Phase 4 (Database & Prisma Models).
+                Phase 4 Complete: Database Schema + Prisma ORM + Profile System active. Ready for Phase 5 (Main Personalized Dashboard).
               </span>
-              <span className="font-semibold text-indigo-600 dark:text-indigo-400">Phase 4 Ready →</span>
+              <Link href="/dashboard/profile" className="font-semibold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1 shrink-0">
+                <span>Manage Student Profile</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
             </div>
           </CardContent>
         </Card>

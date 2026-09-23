@@ -1,0 +1,178 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  MODERATOR
+  ADMIN
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  passwordHash  String
+  role          Role      @default(USER)
+  emailVerified Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  profile                 Profile?
+  sessions                Session[]
+  emailTokens             EmailVerificationToken[]
+  resetTokens             PasswordResetToken[]
+  notes                   Note[]
+  timetable               TimetableEntry[]
+  assignments             Assignment[]
+  internshipApplications  InternshipApplication[]
+  auditLogs               AuditLog[]
+
+  @@index([email])
+  @@index([role])
+}
+
+model Profile {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name        String
+  avatarUrl   String?
+  college     String
+  course      String
+  branch      String
+  year        Int      @default(1)
+  semester    Int      @default(1)
+  bio         String?
+  skills      String[] @default([])
+  github      String?
+  linkedin    String?
+  portfolio   String?
+  preferences Json?    @default("{}")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([college, branch])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sessionToken String   @unique
+  userAgent    String?
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+
+  @@index([userId])
+}
+
+model EmailVerificationToken {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model Note {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title       String
+  description String?
+  subject     String
+  category    String   @default("General")
+  tags        String[] @default([])
+  fileUrl     String?
+  fileSize    Int?
+  status      String   @default("IN_PROGRESS")
+  isArchived  Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId, subject])
+}
+
+model TimetableEntry {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subject   String
+  faculty   String?
+  day       String
+  startTime String
+  endTime   String
+  room      String?
+  notes     String?
+  createdAt DateTime @default(now())
+
+  @@index([userId, day])
+}
+
+model Assignment {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title         String
+  subject       String
+  description   String?
+  dueDate       DateTime
+  priority      String   @default("MEDIUM")
+  status        String   @default("PENDING")
+  attachmentUrl String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([userId, status, dueDate])
+}
+
+model InternshipApplication {
+  id              String    @id @default(cuid())
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  company         String
+  role            String
+  jobUrl          String?
+  applicationDate DateTime  @default(now())
+  deadline        DateTime?
+  status          String    @default("SAVED")
+  notes           String?
+  resumeVersion   String?
+  recruiterNote   String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([userId, status])
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action    String
+  entity    String
+  entityId  String?
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  @@index([userId, action])
+}

@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
   UploadCloud,
@@ -24,6 +25,7 @@ export function QuickActionsBar() {
       icon: UploadCloud,
       color: "from-blue-500 to-indigo-600",
       description: "Upload syllabus PDF or lecture slides to your notes library.",
+      href: "/dashboard/notes?action=upload",
     },
     {
       id: "ask_ai",
@@ -92,19 +94,33 @@ export function QuickActionsBar() {
       <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
         {actions.map((act) => {
           const Icon = act.icon;
-          return (
-            <button
-              key={act.id}
-              type="button"
-              onClick={() => handleActionClick(act.id, act.label)}
-              className="p-3.5 rounded-2xl border border-zinc-200/80 dark:border-zinc-800/80 bg-white dark:bg-zinc-900/60 hover:border-indigo-500/50 hover:shadow-md hover:shadow-indigo-500/5 transition-all text-center flex flex-col items-center justify-center gap-2 group cursor-pointer"
-            >
+          const buttonContent = (
+            <div className="p-3.5 rounded-2xl border border-zinc-200/80 dark:border-zinc-800/80 bg-white dark:bg-zinc-900/60 hover:border-indigo-500/50 hover:shadow-md hover:shadow-indigo-500/5 transition-all text-center flex flex-col items-center justify-center gap-2 group cursor-pointer w-full h-full">
               <div className="w-10 h-10 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 group-hover:bg-gradient-to-tr group-hover:text-white transition-all flex items-center justify-center group-hover:scale-105">
                 <Icon className="w-5 h-5" />
               </div>
               <span className="text-xs font-semibold text-zinc-800 dark:text-zinc-200 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
                 {act.label}
               </span>
+            </div>
+          );
+
+          if (act.href) {
+            return (
+              <Link key={act.id} href={act.href} className="block">
+                {buttonContent}
+              </Link>
+            );
+          }
+
+          return (
+            <button
+              key={act.id}
+              type="button"
+              onClick={() => handleActionClick(act.id, act.label)}
+              className="text-left w-full h-full"
+            >
+              {buttonContent}
             </button>
           );
         })}

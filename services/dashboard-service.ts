@@ -1,5 +1,6 @@
 import { StoredUser, AuthService } from "@/services/auth-service";
 import { ProfileService, StudentProfileData } from "@/services/profile-service";
+import { NotesService } from "@/services/notes-service";
 
 export interface ClassScheduleItem {
   id: string;
@@ -136,32 +137,18 @@ export const DashboardService = {
       },
     ];
 
-    const mockNotes: RecentNoteItem[] = [
-      {
-        id: "note_1",
-        title: "DBMS_Unit4_Concurrency_Control.pdf",
-        subject: "DBMS",
-        fileSize: "4.2 MB",
-        uploadedAt: "Yesterday",
-        pages: 28,
-      },
-      {
-        id: "note_2",
-        title: "DAA_DynamicProgramming_Cheatsheet.pdf",
-        subject: "DAA",
-        fileSize: "2.1 MB",
-        uploadedAt: "3 days ago",
-        pages: 14,
-      },
-      {
-        id: "note_3",
-        title: "OS_Memory_Management_VirtualMemory.pdf",
-        subject: "Operating Systems",
-        fileSize: "5.8 MB",
-        uploadedAt: "Sep 20",
-        pages: 36,
-      },
-    ];
+    const userNotes = await NotesService.getNotes(userId, { isArchived: false, sortBy: "newest" });
+    const dynamicRecentNotes: RecentNoteItem[] = userNotes.slice(0, 3).map((n) => ({
+      id: n.id,
+      title: n.fileName || `${n.title}.pdf`,
+      subject: n.subject,
+      fileSize: n.fileSize ? `${(n.fileSize / (1024 * 1024)).toFixed(1)} MB` : "PDF",
+      uploadedAt: new Date(n.createdAt).toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+      }),
+      pages: Math.max(8, Math.round((n.fileSize || 2500000) / 120000)),
+    }));
 
     const mockNotifications: StudentNotificationItem[] = [
       {
@@ -211,7 +198,7 @@ export const DashboardService = {
       },
       todayClasses: mockClasses,
       upcomingAssignments: mockAssignments,
-      recentNotes: mockNotes,
+      recentNotes: dynamicRecentNotes,
       notifications: mockNotifications,
     };
   },

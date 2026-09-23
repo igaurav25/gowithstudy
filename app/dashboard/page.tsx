@@ -1,17 +1,22 @@
 import { getSession } from "@/lib/auth";
-import { logoutAction, logoutAllDevicesAction } from "@/features/auth/actions";
-import { Button } from "@/components/ui/button";
+import { DashboardService } from "@/services/dashboard-service";
+import { DashboardNav } from "@/components/dashboard/dashboard-nav";
+import { QuickActionsBar } from "@/components/dashboard/quick-actions";
+import { TimetableWidget } from "@/components/dashboard/timetable-widget";
+import { AssignmentsWidget } from "@/components/dashboard/assignments-widget";
+import { CareerDSAWidget } from "@/components/dashboard/career-dsa-widget";
+import { RecentNotesWidget } from "@/components/dashboard/recent-notes-widget";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import {
-  GraduationCap,
-  LogOut,
-  ShieldAlert,
-  UserCheck,
-  User,
-  Database,
+  Sparkles,
+  Flame,
+  CheckCircle2,
+  Calendar,
+  Clock,
   ArrowRight,
-  Settings,
+  TrendingUp,
+  Percent,
 } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -23,120 +28,105 @@ export default async function DashboardPage() {
     redirect("/login");
   }
 
+  const data = await DashboardService.getDashboardData(session.userId);
+  if (!data) {
+    redirect("/login");
+  }
+
   return (
-    <div className="min-h-screen flex flex-col bg-background text-foreground">
-      {/* Dashboard Header */}
-      <header className="border-b border-zinc-200/80 dark:border-zinc-800/80 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-md sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Link href="/" className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 via-violet-600 to-sky-500 flex items-center justify-center text-white shadow-md shadow-indigo-500/20">
-                <GraduationCap className="w-5 h-5" />
-              </div>
-              <span className="font-bold text-lg tracking-tight text-zinc-900 dark:text-zinc-50">
-                CampusFlow
+    <div className="min-h-screen flex flex-col bg-background text-foreground antialiased">
+      {/* 1. Dashboard Navigation Bar */}
+      <DashboardNav session={session} notifications={data.notifications} />
+
+      {/* 2. Main Dashboard Content */}
+      <main className="flex-1 max-w-7xl mx-auto px-6 py-8 w-full space-y-8">
+        {/* Welcome & Status Banner */}
+        <section className="relative overflow-hidden p-6 sm:p-8 rounded-3xl border border-indigo-200/60 dark:border-indigo-900/60 bg-gradient-to-r from-indigo-50/70 via-violet-50/40 to-sky-50/50 dark:from-indigo-950/40 dark:via-purple-950/20 dark:to-zinc-950 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+          <div className="space-y-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge variant="purple" className="text-xs">
+                {data.student.college}
+              </Badge>
+              <span className="text-xs text-zinc-500">•</span>
+              <span className="text-xs font-semibold text-zinc-600 dark:text-zinc-400">
+                {data.student.course} ({data.student.branch}) • Year {data.student.year}, Sem {data.student.semester}
               </span>
-            </Link>
-            <Badge variant="purple" className="text-[11px] ml-2">
-              Role: {session.role}
-            </Badge>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <Link href="/dashboard/profile">
-              <Button variant="outline" size="sm">
-                <User className="w-3.5 h-3.5 mr-1.5" />
-                <span>Profile & Settings</span>
-              </Button>
-            </Link>
-            <form action={logoutAction}>
-              <Button variant="ghost" size="sm" type="submit">
-                <LogOut className="w-3.5 h-3.5 mr-1" />
-                <span>Log Out</span>
-              </Button>
-            </form>
-          </div>
-        </div>
-      </header>
-
-      {/* Main Container */}
-      <main className="flex-1 max-w-7xl mx-auto px-6 py-10 w-full space-y-8">
-        {/* Welcome Banner */}
-        <div className="p-8 rounded-3xl border border-indigo-200/60 dark:border-indigo-900/60 bg-gradient-to-r from-indigo-50/70 via-purple-50/40 to-sky-50/50 dark:from-indigo-950/30 dark:via-purple-950/20 dark:to-zinc-950 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 shadow-sm">
-          <div>
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-600/10 text-indigo-700 dark:text-indigo-300 text-xs font-semibold mb-3">
-              <UserCheck className="w-3.5 h-3.5" />
-              <span>Authenticated Session Active</span>
             </div>
+
             <h1 className="text-2xl sm:text-4xl font-extrabold tracking-tight text-zinc-900 dark:text-zinc-50">
-              Welcome back, {session.name}!
+              {data.greeting}
             </h1>
-            <p className="mt-1 text-sm sm:text-base text-zinc-600 dark:text-zinc-400">
-              {session.college || "University Student"} • {session.course || "B.Tech"} in {session.branch || "CSE"} • Year {session.year || 3}, Sem {session.semester || 6}
+
+            <p className="text-xs sm:text-sm text-zinc-600 dark:text-zinc-400 max-w-2xl leading-relaxed">
+              You have <strong className="text-indigo-600 dark:text-indigo-400">{data.todayClasses.length} lectures</strong> scheduled today, and <strong className="text-amber-600 dark:text-amber-400">{data.upcomingAssignments.filter(a => !a.completed).length} pending assignments</strong> due this week.
             </p>
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-2.5 w-full sm:w-auto">
-            <Link href="/dashboard/profile">
-              <Button variant="gradient" size="sm" className="w-full sm:w-auto">
-                <Settings className="w-3.5 h-3.5 mr-1.5" />
-                <span>Edit Profile</span>
-              </Button>
-            </Link>
-            <form action={logoutAllDevicesAction}>
-              <Button variant="outline" size="sm" className="w-full sm:w-auto text-xs text-zinc-600 hover:text-rose-600" type="submit">
-                <ShieldAlert className="w-3.5 h-3.5 mr-1" />
-                <span>Revoke All Devices</span>
-              </Button>
-            </form>
+          {/* Quick Metrics Cards */}
+          <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+            <div className="flex-1 md:flex-initial p-3.5 rounded-2xl bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 shadow-sm text-center min-w-[100px]">
+              <div className="flex items-center justify-center gap-1 text-[11px] font-semibold text-zinc-500">
+                <Percent className="w-3.5 h-3.5 text-emerald-500" />
+                <span>Attendance</span>
+              </div>
+              <p className="text-lg font-bold text-zinc-900 dark:text-zinc-100 mt-0.5">
+                {data.attendanceRate}%
+              </p>
+            </div>
+
+            <div className="flex-1 md:flex-initial p-3.5 rounded-2xl bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 shadow-sm text-center min-w-[100px]">
+              <div className="flex items-center justify-center gap-1 text-[11px] font-semibold text-zinc-500">
+                <Flame className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
+                <span>Study Streak</span>
+              </div>
+              <p className="text-lg font-bold text-zinc-900 dark:text-zinc-100 mt-0.5">
+                {data.studyStreakDays}d
+              </p>
+            </div>
+
+            <div className="flex-1 md:flex-initial p-3.5 rounded-2xl bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 shadow-sm text-center min-w-[100px]">
+              <div className="flex items-center justify-center gap-1 text-[11px] font-semibold text-zinc-500">
+                <CheckCircle2 className="w-3.5 h-3.5 text-indigo-500" />
+                <span>Tasks Done</span>
+              </div>
+              <p className="text-lg font-bold text-zinc-900 dark:text-zinc-100 mt-0.5">
+                {data.assignmentCompletionRate}%
+              </p>
+            </div>
           </div>
-        </div>
+        </section>
 
-        {/* Database & Prisma Architecture Card */}
-        <Card className="border-zinc-200/80 dark:border-zinc-800">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <Database className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-                <CardTitle className="text-lg">Prisma Database & RBAC Telemetry</CardTitle>
-              </div>
-              <Badge variant="success">Prisma Schema v6.19 Active</Badge>
-            </div>
-            <CardDescription>
-              Normalized relational schema models configured for User, Profile, Sessions, Notes, Timetable, Assignments, and Applications.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="p-4 rounded-xl border border-zinc-200/80 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/50">
-                <span className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">User ID</span>
-                <p className="mt-1 text-sm font-mono text-zinc-900 dark:text-zinc-100">{session.userId}</p>
-              </div>
-              <div className="p-4 rounded-xl border border-zinc-200/80 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/50">
-                <span className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">Email Address</span>
-                <p className="mt-1 text-sm font-mono text-zinc-900 dark:text-zinc-100">{session.email}</p>
-              </div>
-              <div className="p-4 rounded-xl border border-zinc-200/80 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/50">
-                <span className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">Role Clearance</span>
-                <p className="mt-1 text-sm font-bold text-indigo-600 dark:text-indigo-400">{session.role}</p>
-              </div>
-              <div className="p-4 rounded-xl border border-zinc-200/80 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/50">
-                <span className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">Session Key</span>
-                <p className="mt-1 text-xs font-mono text-zinc-500 truncate">{session.sessionId}</p>
-              </div>
-            </div>
+        {/* 3. Student Quick Actions */}
+        <section>
+          <QuickActionsBar />
+        </section>
 
-            <div className="p-4 rounded-xl bg-indigo-50/60 dark:bg-indigo-950/30 border border-indigo-200/80 dark:border-indigo-900/60 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
-              <span className="text-indigo-900 dark:text-indigo-300 font-medium">
-                Phase 4 Complete: Database Schema + Prisma ORM + Profile System active. Ready for Phase 5 (Main Personalized Dashboard).
-              </span>
-              <Link href="/dashboard/profile" className="font-semibold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1 shrink-0">
-                <span>Manage Student Profile</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </Link>
-            </div>
-          </CardContent>
-        </Card>
+        {/* 4. Widgets Grid: 2 Columns */}
+        <section className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+          {/* Left Column */}
+          <div className="space-y-8">
+            {/* Today's Timetable Widget */}
+            <TimetableWidget classes={data.todayClasses} />
+
+            {/* Recent Notes & Document Grounding */}
+            <RecentNotesWidget notes={data.recentNotes} />
+          </div>
+
+          {/* Right Column */}
+          <div className="space-y-8">
+            {/* Upcoming Assignments Deadline Tracker */}
+            <AssignmentsWidget initialAssignments={data.upcomingAssignments} />
+
+            {/* Placement, DSA & Internship Tracker */}
+            <CareerDSAWidget
+              dsaSolved={data.dsaSolvedCount}
+              dsaTotal={data.dsaTotalCount}
+              streakDays={data.studyStreakDays}
+              categories={data.dsaCategories}
+              jobStats={data.jobApplicationsCount}
+            />
+          </div>
+        </section>
       </main>
     </div>
   );

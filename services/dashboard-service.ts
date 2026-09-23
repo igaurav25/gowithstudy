@@ -1,6 +1,8 @@
 import { StoredUser, AuthService } from "@/services/auth-service";
 import { ProfileService, StudentProfileData } from "@/services/profile-service";
 import { NotesService } from "@/services/notes-service";
+import { TimetableService } from "@/services/timetable-service";
+import { AssignmentsService } from "@/services/assignments-service";
 
 export interface ClassScheduleItem {
   id: string;
@@ -74,68 +76,36 @@ export const DashboardService = {
     const profile = await ProfileService.getProfile(userId);
     if (!profile) return null;
 
-    const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-    const currentDay = days[new Date().getDay()];
+    // Fetch dynamic today's schedule from TimetableService
+    const liveTodayClasses = await TimetableService.getTodayClasses(userId);
+    const dynamicClasses: ClassScheduleItem[] = liveTodayClasses.map((c) => ({
+      id: c.id,
+      subject: c.subject,
+      faculty: c.faculty || "Faculty",
+      time: `${c.startTime} - ${c.endTime}`,
+      room: c.room || "TBA",
+      day: c.day,
+      status: c.status || "UPCOMING",
+    }));
 
-    const mockClasses: ClassScheduleItem[] = [
-      {
-        id: "cls_1",
-        subject: "Database Management Systems",
-        faculty: "Dr. Sharma",
-        time: "10:00 AM - 11:30 AM",
-        room: "Hall 302",
-        day: currentDay,
-        status: "COMPLETED",
-      },
-      {
-        id: "cls_2",
-        subject: "Design & Analysis of Algorithms",
-        faculty: "Prof. Rajesh Mehta",
-        time: "01:30 PM - 03:00 PM",
-        room: "CS Lab 2",
-        day: currentDay,
-        status: "IN_PROGRESS",
-      },
-      {
-        id: "cls_3",
-        subject: "Computer Networks & Security",
-        faculty: "Dr. Kavita Verma",
-        time: "03:15 PM - 04:45 PM",
-        room: "Room 105",
-        day: currentDay,
-        status: "UPCOMING",
-      },
-    ];
+    // Fetch dynamic assignments and stats from AssignmentsService
+    const [userAssignments, assignmentStats] = await Promise.all([
+      AssignmentsService.getAssignments(userId),
+      AssignmentsService.getAssignmentsStats(userId),
+    ]);
 
-    const mockAssignments: UpcomingAssignmentItem[] = [
-      {
-        id: "asg_1",
-        title: "B+ Tree Indexing & Transaction Concurrency Report",
-        subject: "DBMS",
-        dueDate: "Tomorrow, 11:59 PM",
-        dueDays: 1,
-        priority: "URGENT",
-        completed: false,
-      },
-      {
-        id: "asg_2",
-        title: "Dijkstra & Prim's Algorithm Optimization Analysis",
-        subject: "DAA",
-        dueDate: "Friday, 05:00 PM",
-        dueDays: 2,
-        priority: "HIGH",
-        completed: false,
-      },
-      {
-        id: "asg_3",
-        title: "TCP Congestion Control Simulation using ns-3",
-        subject: "Networks",
-        dueDate: "Next Monday",
-        dueDays: 5,
-        priority: "MEDIUM",
-        completed: true,
-      },
-    ];
+    const dynamicAssignments: UpcomingAssignmentItem[] = userAssignments
+      .filter((a) => a.status !== "COMPLETED")
+      .slice(0, 3)
+      .map((a) => ({
+        id: a.id,
+        title: a.title,
+        subject: a.subject,
+        dueDate: a.dueLabel,
+        dueDays: a.dueDays,
+        priority: a.priority,
+        completed: a.status === "COMPLETED",
+      }));
 
     const userNotes = await NotesService.getNotes(userId, { isArchived: false, sortBy: "newest" });
     const dynamicRecentNotes: RecentNoteItem[] = userNotes.slice(0, 3).map((n) => ({
@@ -181,7 +151,7 @@ export const DashboardService = {
       greeting: this.getGreeting(profile.name),
       student: profile,
       attendanceRate: 88,
-      assignmentCompletionRate: 92,
+      assignmentCompletionRate: Math.round(assignmentStats.completionRate) || 92,
       studyStreakDays: 14,
       dsaSolvedCount: 168,
       dsaTotalCount: 250,
@@ -196,8 +166,8 @@ export const DashboardService = {
         interview: 3,
         offer: 1,
       },
-      todayClasses: mockClasses,
-      upcomingAssignments: mockAssignments,
+      todayClasses: dynamicClasses,
+      upcomingAssignments: dynamicAssignments,
       recentNotes: dynamicRecentNotes,
       notifications: mockNotifications,
     };

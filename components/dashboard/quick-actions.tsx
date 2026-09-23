@@ -33,6 +33,7 @@ export function QuickActionsBar() {
       icon: Sparkles,
       color: "from-purple-500 to-violet-600",
       description: "Ask conceptual questions or query your uploaded course materials.",
+      href: "/dashboard/ai",
     },
     {
       id: "add_assignment",
@@ -40,6 +41,7 @@ export function QuickActionsBar() {
       icon: PlusCircle,
       color: "from-amber-500 to-orange-600",
       description: "Set an assignment deadline with priority and subject tags.",
+      href: "/dashboard/assignments?action=add",
     },
     {
       id: "add_class",
@@ -47,6 +49,7 @@ export function QuickActionsBar() {
       icon: CalendarPlus,
       color: "from-emerald-500 to-teal-600",
       description: "Add a recurring class lecture or lab to your weekly timetable.",
+      href: "/dashboard/timetable?action=add",
     },
     {
       id: "track_app",

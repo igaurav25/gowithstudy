@@ -25,6 +25,7 @@ import {
   Sparkles,
   Lock,
 } from "lucide-react";
+import { SecuritySessionsManager } from "./security-sessions-manager";
 
 export function ProfileEditor({ initialData }: { initialData: StudentProfileData }) {
   const [activeTab, setActiveTab] = React.useState<"profile" | "account" | "security" | "preferences">("profile");
@@ -341,73 +342,77 @@ export function ProfileEditor({ initialData }: { initialData: StudentProfileData
 
         {/* TAB 3: SECURITY & PASSWORD */}
         {activeTab === "security" && (
-          <Card className="border-zinc-200/80 dark:border-zinc-800 shadow-sm">
-            <CardHeader>
-              <CardTitle>Security Settings</CardTitle>
-              <CardDescription>
-                Change password and manage credential security.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handlePasswordSubmit} className="space-y-4 max-w-md">
-                {passResult?.message && (
-                  <div
-                    className={`p-3.5 rounded-xl text-sm font-medium border ${
-                      passResult.success
-                        ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400"
-                        : "bg-rose-500/10 border-rose-500/20 text-rose-600 dark:text-rose-400"
-                    }`}
-                  >
-                    {passResult.message}
+          <div className="space-y-6">
+            <Card className="border-zinc-200/80 dark:border-zinc-800 shadow-sm">
+              <CardHeader>
+                <CardTitle>Security Settings</CardTitle>
+                <CardDescription>
+                  Change password and manage credential security.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handlePasswordSubmit} className="space-y-4 max-w-md">
+                  {passResult?.message && (
+                    <div
+                      className={`p-3.5 rounded-xl text-sm font-medium border ${
+                        passResult.success
+                          ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400"
+                          : "bg-rose-500/10 border-rose-500/20 text-rose-600 dark:text-rose-400"
+                      }`}
+                    >
+                      {passResult.message}
+                    </div>
+                  )}
+
+                  <div>
+                    <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1.5">
+                      Current Password
+                    </label>
+                    <Input
+                      name="currentPassword"
+                      type="password"
+                      placeholder="Enter current password"
+                      required
+                      error={passResult?.errors?.currentPassword}
+                    />
                   </div>
-                )}
 
-                <div>
-                  <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1.5">
-                    Current Password
-                  </label>
-                  <Input
-                    name="currentPassword"
-                    type="password"
-                    placeholder="Enter current password"
-                    required
-                    error={passResult?.errors?.currentPassword}
-                  />
-                </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1.5">
+                      New Password
+                    </label>
+                    <Input
+                      name="newPassword"
+                      type="password"
+                      placeholder="At least 8 chars (upper, lower, number, symbol)"
+                      required
+                      error={passResult?.errors?.newPassword}
+                    />
+                  </div>
 
-                <div>
-                  <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1.5">
-                    New Password
-                  </label>
-                  <Input
-                    name="newPassword"
-                    type="password"
-                    placeholder="At least 8 chars (upper, lower, number, symbol)"
-                    required
-                    error={passResult?.errors?.newPassword}
-                  />
-                </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1.5">
+                      Confirm New Password
+                    </label>
+                    <Input
+                      name="confirmPassword"
+                      type="password"
+                      placeholder="Confirm new password"
+                      required
+                      error={passResult?.errors?.confirmPassword}
+                    />
+                  </div>
 
-                <div>
-                  <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1.5">
-                    Confirm New Password
-                  </label>
-                  <Input
-                    name="confirmPassword"
-                    type="password"
-                    placeholder="Confirm new password"
-                    required
-                    error={passResult?.errors?.confirmPassword}
-                  />
-                </div>
+                  <Button type="submit" variant="gradient" isLoading={passPending}>
+                    <KeyRound className="w-4 h-4 mr-1.5" />
+                    <span>Update Password</span>
+                  </Button>
+                </form>
+              </CardContent>
+            </Card>
 
-                <Button type="submit" variant="gradient" isLoading={passPending}>
-                  <KeyRound className="w-4 h-4 mr-1.5" />
-                  <span>Update Password</span>
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
+            <SecuritySessionsManager />
+          </div>
         )}
 
         {/* TAB 4: PREFERENCES */}

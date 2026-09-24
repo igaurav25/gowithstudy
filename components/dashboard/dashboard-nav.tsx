@@ -19,6 +19,7 @@ import {
   Briefcase,
   Users2,
   Rocket,
+  ShieldCheck,
 } from "lucide-react";
 
 export function DashboardNav({
@@ -28,6 +29,8 @@ export function DashboardNav({
   session: UserSessionPayload;
   notifications: StudentNotificationItem[];
 }) {
+  const isAdminOrMod = session.role === "ADMIN" || session.role === "MODERATOR";
+
   const navLinks = [
     { label: "Overview", href: "/dashboard", icon: LayoutDashboard },
     { label: "Notes", href: "/dashboard/notes", icon: FileText },
@@ -38,6 +41,7 @@ export function DashboardNav({
     { label: "Internships", href: "/dashboard/internships", icon: Briefcase },
     { label: "Community", href: "/dashboard/community", icon: Users2 },
     { label: "Projects", href: "/dashboard/projects", icon: Rocket },
+    ...(isAdminOrMod ? [{ label: "Admin", href: "/dashboard/admin", icon: ShieldCheck }] : []),
   ];
 
   return (

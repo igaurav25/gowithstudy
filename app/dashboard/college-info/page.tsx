@@ -53,7 +53,7 @@ export default async function CollegeInfoPage() {
         notifications={dashboardData?.notifications || []}
       />
 
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
+      <main id="main-content" className="max-w-6xl mx-auto px-4 sm:px-6 py-8 focus:outline-none">
         <Suspense
           fallback={
             <div className="space-y-6 animate-pulse">

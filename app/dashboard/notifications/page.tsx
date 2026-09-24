@@ -32,7 +32,7 @@ export default async function NotificationsPage() {
         notifications={dashboardData?.notifications || []}
       />
 
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
+      <main id="main-content" className="max-w-6xl mx-auto px-4 sm:px-6 py-8 focus:outline-none">
         <Suspense fallback={<div className="h-96 rounded-2xl bg-zinc-100/50 dark:bg-zinc-900/50 animate-pulse" />}>
           <NotificationsCenterView
             initialNotifications={notifications}

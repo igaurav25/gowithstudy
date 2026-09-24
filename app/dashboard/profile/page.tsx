@@ -41,7 +41,7 @@ export default async function StudentProfilePage() {
       </header>
 
       {/* Main Container */}
-      <main className="flex-1 max-w-7xl mx-auto px-6 py-10 w-full">
+      <main id="main-content" className="flex-1 max-w-7xl mx-auto px-6 py-10 w-full focus:outline-none">
         <ProfileEditor initialData={profile} />
       </main>
     </div>

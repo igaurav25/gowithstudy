@@ -39,7 +39,7 @@ export default async function DashboardPage() {
       <DashboardNav session={session} notifications={data.notifications} />
 
       {/* 2. Main Dashboard Content */}
-      <main className="flex-1 max-w-7xl mx-auto px-6 py-8 w-full space-y-8">
+      <main id="main-content" className="flex-1 max-w-7xl mx-auto px-6 py-8 w-full space-y-8 focus:outline-none">
         {/* Welcome & Status Banner */}
         <section className="relative overflow-hidden p-6 sm:p-8 rounded-3xl border border-indigo-200/60 dark:border-indigo-900/60 bg-gradient-to-r from-indigo-50/70 via-violet-50/40 to-sky-50/50 dark:from-indigo-950/40 dark:via-purple-950/20 dark:to-zinc-950 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
           <div className="space-y-2">

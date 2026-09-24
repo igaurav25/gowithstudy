@@ -65,7 +65,7 @@ export function DashboardNav({
         </div>
 
         {/* Desktop Quick Submenu */}
-        <nav className="hidden lg:flex items-center gap-5 text-xs font-semibold text-zinc-600 dark:text-zinc-400">
+        <nav aria-label="Main Application Navigation" className="hidden lg:flex items-center gap-5 text-xs font-semibold text-zinc-600 dark:text-zinc-400">
           {navLinks.map((item) => {
             const Icon = item.icon;
             return (
@@ -87,7 +87,7 @@ export function DashboardNav({
           <NotificationsDrawer initialNotifications={notifications} />
 
           {/* Profile Quick Pill */}
-          <Link href="/dashboard/profile">
+          <Link href="/dashboard/profile" aria-label={`View ${session.name}'s profile`}>
             <div className="flex items-center gap-2 p-1.5 pr-3 rounded-full border border-zinc-200/80 dark:border-zinc-800 hover:border-indigo-500/50 transition-colors cursor-pointer bg-zinc-50/50 dark:bg-zinc-900/50">
               <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-indigo-600 to-violet-600 text-white font-bold text-xs flex items-center justify-center">
                 {session.name[0]}
@@ -99,7 +99,14 @@ export function DashboardNav({
           </Link>
 
           <form action={logoutAction}>
-            <Button variant="ghost" size="sm" type="submit" className="p-2 h-9 w-9 text-zinc-500 hover:text-rose-600">
+            <Button
+              variant="ghost"
+              size="sm"
+              type="submit"
+              aria-label="Log out of CampusFlow"
+              title="Log out of account"
+              className="p-2 h-9 w-9 text-zinc-500 hover:text-rose-600"
+            >
               <LogOut className="w-4 h-4" />
             </Button>
           </form>

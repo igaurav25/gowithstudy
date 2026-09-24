@@ -5,6 +5,7 @@ import { TimetableService } from "@/services/timetable-service";
 import { AssignmentsService } from "@/services/assignments-service";
 import { DSAService } from "@/services/dsa-service";
 import { InternshipsService } from "@/services/internships-service";
+import { NotificationsService } from "@/services/notifications-service";
 
 export interface ClassScheduleItem {
   id: string;
@@ -39,9 +40,11 @@ export interface StudentNotificationItem {
   id: string;
   title: string;
   description: string;
-  type: "ASSIGNMENT" | "INTERVIEW" | "COMMUNITY" | "SYSTEM";
+  type: string;
   timestamp: string;
   read: boolean;
+  link?: string | null;
+  priority?: string;
 }
 
 export interface DashboardMetrics {
@@ -122,37 +125,36 @@ export const DashboardService = {
       pages: Math.max(8, Math.round((n.fileSize || 2500000) / 120000)),
     }));
 
-    const mockNotifications: StudentNotificationItem[] = [
-      {
-        id: "notif_1",
-        title: "Assignment Due in 24 Hours",
-        description: "DBMS B+ Tree Report is due tomorrow at 11:59 PM.",
-        type: "ASSIGNMENT",
-        timestamp: "10 mins ago",
-        read: false,
-      },
-      {
-        id: "notif_2",
-        title: "Google SWE Intern OA Round",
-        description: "Your Online Assessment invitation has been scheduled.",
-        type: "INTERVIEW",
-        timestamp: "2 hours ago",
-        read: false,
-      },
-      {
-        id: "notif_3",
-        title: "New Hackathon Team Request",
-        description: "Rohit requested to join your Smart Campus project team.",
-        type: "COMMUNITY",
-        timestamp: "Yesterday",
-        read: true,
-      },
-    ];
-
-    const [dsaStats, internshipStats] = await Promise.all([
+    const [dsaStats, internshipStats, rawNotifications] = await Promise.all([
       DSAService.getDSAStats(userId),
       InternshipsService.getInternshipStats(userId),
+      NotificationsService.getNotifications(userId),
     ]);
+
+    const formatRelativeTime = (isoString: string) => {
+      const diffMs = Date.now() - new Date(isoString).getTime();
+      const diffMins = Math.floor(diffMs / (1000 * 60));
+      if (diffMins < 1) return "Just now";
+      if (diffMins < 60) return `${diffMins}m ago`;
+      const diffHours = Math.floor(diffMins / 60);
+      if (diffHours < 24) return `${diffHours}h ago`;
+      const diffDays = Math.floor(diffHours / 24);
+      if (diffDays === 1) return "Yesterday";
+      return `${diffDays}d ago`;
+    };
+
+    const dynamicNotifications: StudentNotificationItem[] = rawNotifications
+      .slice(0, 8)
+      .map((n) => ({
+        id: n.id,
+        title: n.title,
+        description: n.message,
+        type: n.type,
+        timestamp: formatRelativeTime(n.createdAt),
+        read: n.read,
+        link: n.link,
+        priority: n.priority,
+      }));
 
     return {
       greeting: this.getGreeting(profile.name),
@@ -176,7 +178,7 @@ export const DashboardService = {
       todayClasses: dynamicClasses,
       upcomingAssignments: dynamicAssignments,
       recentNotes: dynamicRecentNotes,
-      notifications: mockNotifications,
+      notifications: dynamicNotifications,
     };
   },
 };

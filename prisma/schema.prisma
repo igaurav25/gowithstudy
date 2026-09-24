@@ -37,6 +37,8 @@ model User {
   projectsOwned           Project[]                @relation("ProjectsOwned")
   projectMemberships      ProjectMember[]
   projectJoinRequests     ProjectJoinRequest[]
+  notifications           Notification[]
+  notificationPreference  NotificationPreference?
   auditLogs               AuditLog[]
 
   @@index([email])
@@ -320,6 +322,46 @@ model ProjectJoinRequest {
   updatedAt         DateTime @updatedAt
 
   @@index([projectId, status])
+  @@index([userId])
+}
+
+model Notification {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String
+  title     String
+  message   String
+  link      String?
+  priority  String    @default("MEDIUM")
+  read      Boolean   @default(false)
+  readAt    DateTime?
+  metadata  String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([userId, read])
+  @@index([userId, createdAt])
+}
+
+model NotificationPreference {
+  id                 String   @id @default(cuid())
+  userId             String   @unique
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  inAppAssignments   Boolean  @default(true)
+  inAppDeadlines     Boolean  @default(true)
+  inAppTeamRequests  Boolean  @default(true)
+  inAppCommunity     Boolean  @default(true)
+  inAppSecurity      Boolean  @default(true)
+  inAppSystem        Boolean  @default(true)
+  inAppAiCompletion  Boolean  @default(true)
+  emailDigest        Boolean  @default(true)
+  emailSecurity      Boolean  @default(true)
+  emailTeamRequests  Boolean  @default(false)
+  pushEnabled        Boolean  @default(false)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
   @@index([userId])
 }
 

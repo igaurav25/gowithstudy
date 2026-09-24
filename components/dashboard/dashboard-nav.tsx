@@ -18,6 +18,7 @@ import {
   Code2,
   Briefcase,
   Users2,
+  Rocket,
 } from "lucide-react";
 
 export function DashboardNav({
@@ -36,6 +37,7 @@ export function DashboardNav({
     { label: "DSA Tracker", href: "/dashboard/placement", icon: Code2 },
     { label: "Internships", href: "/dashboard/internships", icon: Briefcase },
     { label: "Community", href: "/dashboard/community", icon: Users2 },
+    { label: "Projects", href: "/dashboard/projects", icon: Rocket },
   ];
 
   return (

@@ -69,11 +69,11 @@ export function QuickActionsBar() {
     },
     {
       id: "find_team",
-      label: "Community",
+      label: "Find Team",
       icon: Users2,
       color: "from-indigo-500 to-purple-600",
-      description: "Ask doubts, share placement tips, and find project teammates.",
-      href: "/dashboard/community",
+      description: "Browse hackathon teams or publish a project teammate listing.",
+      href: "/dashboard/projects?action=create",
     },
   ];
 

@@ -12,6 +12,7 @@ import {
   Code2,
   Users2,
   Check,
+  Building2,
 } from "lucide-react";
 
 export function QuickActionsBar() {
@@ -74,6 +75,14 @@ export function QuickActionsBar() {
       color: "from-indigo-500 to-purple-600",
       description: "Browse hackathon teams or publish a project teammate listing.",
       href: "/dashboard/projects?action=create",
+    },
+    {
+      id: "college_info",
+      label: "University Circulars",
+      icon: Building2,
+      color: "from-emerald-500 to-teal-600",
+      description: "Browse verified university notices, exam schedules, and circulars.",
+      href: "/dashboard/college-info",
     },
   ];
 

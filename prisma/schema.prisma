@@ -41,6 +41,7 @@ model User {
   notifications           Notification[]
   notificationPreference  NotificationPreference?
   announcements           SystemAnnouncement[]
+  collegeInformationCreated CollegeInformation[]
   auditLogs               AuditLog[]
 
   @@index([email])
@@ -386,5 +387,49 @@ model SystemAnnouncement {
   @@index([isActive, isPinned])
   @@index([category, createdAt])
 }
+
+model College {
+  id              String               @id @default(cuid())
+  code            String               @unique
+  name            String
+  city            String
+  state           String
+  websiteUrl      String?
+  verifiedDomains String[]             @default([])
+  departments     String[]             @default([])
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+
+  informationItems CollegeInformation[]
+
+  @@index([code])
+}
+
+model CollegeInformation {
+  id             String    @id @default(cuid())
+  collegeId      String
+  college        College   @relation(fields: [collegeId], references: [id], onDelete: Cascade)
+  category       String
+  title          String
+  content        String
+  refNumber      String?
+  officialDocUrl String?
+  verifiedState  String    @default("VERIFIED")
+  verifiedBy     String?
+  verifiedAt     DateTime?
+  creatorId      String
+  creator        User      @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  department     String?
+  validUntil     DateTime?
+  isPinned       Boolean   @default(false)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([collegeId, category])
+  @@index([collegeId, verifiedState])
+  @@index([creatorId])
+  @@index([isPinned, createdAt])
+}
+
 
 

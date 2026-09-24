@@ -20,6 +20,7 @@ import {
   Users2,
   Rocket,
   ShieldCheck,
+  Building2,
 } from "lucide-react";
 
 export function DashboardNav({
@@ -41,6 +42,7 @@ export function DashboardNav({
     { label: "Internships", href: "/dashboard/internships", icon: Briefcase },
     { label: "Community", href: "/dashboard/community", icon: Users2 },
     { label: "Projects", href: "/dashboard/projects", icon: Rocket },
+    { label: "University", href: "/dashboard/college-info", icon: Building2 },
     ...(isAdminOrMod ? [{ label: "Admin", href: "/dashboard/admin", icon: ShieldCheck }] : []),
   ];
 

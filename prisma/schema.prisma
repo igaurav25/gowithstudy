@@ -30,6 +30,10 @@ model User {
   timetable               TimetableEntry[]
   assignments             Assignment[]
   internshipApplications  InternshipApplication[]
+  communityPosts          CommunityPost[]
+  communityComments       CommunityComment[]
+  communityReactions      CommunityReaction[]
+  contentReports          ContentReport[]
   auditLogs               AuditLog[]
 
   @@index([email])
@@ -176,3 +180,79 @@ model AuditLog {
 
   @@index([userId, action])
 }
+
+model CommunityPost {
+  id            String               @id @default(cuid())
+  userId        String
+  user          User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  authorName    String
+  authorAvatar  String?
+  authorBranch  String?
+  title         String
+  content       String
+  category      String               @default("STUDY")
+  tags          String[]             @default([])
+  isPinned      Boolean              @default(false)
+  isAnonymous   Boolean              @default(false)
+  upvotesCount  Int                  @default(0)
+  commentsCount Int                  @default(0)
+  viewsCount    Int                  @default(0)
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+
+  comments      CommunityComment[]
+  reactions     CommunityReaction[]
+
+  @@index([userId, category])
+  @@index([category, createdAt])
+}
+
+model CommunityComment {
+  id              String            @id @default(cuid())
+  postId          String
+  post            CommunityPost     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userId          String
+  user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  authorName      String
+  authorAvatar    String?
+  authorBranch    String?
+  content         String
+  parentCommentId String?
+  upvotesCount    Int               @default(0)
+  isAccepted      Boolean           @default(false)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  @@index([postId, createdAt])
+  @@index([userId])
+}
+
+model CommunityReaction {
+  id        String        @id @default(cuid())
+  postId    String
+  post      CommunityPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String        @default("UPVOTE")
+  createdAt DateTime      @default(now())
+
+  @@unique([userId, postId, type])
+  @@index([postId])
+}
+
+model ContentReport {
+  id          String   @id @default(cuid())
+  reporterId  String
+  reporter    User     @relation(fields: [reporterId], references: [id], onDelete: Cascade)
+  entityType  String
+  entityId    String
+  reason      String
+  description String?
+  status      String   @default("OPEN")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([reporterId, status])
+  @@index([entityType, entityId])
+}
+

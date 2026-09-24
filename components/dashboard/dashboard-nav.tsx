@@ -35,6 +35,7 @@ export function DashboardNav({
     { label: "AI Copilot", href: "/dashboard/ai", icon: Sparkles },
     { label: "DSA Tracker", href: "/dashboard/placement", icon: Code2 },
     { label: "Internships", href: "/dashboard/internships", icon: Briefcase },
+    { label: "Community", href: "/dashboard/community", icon: Users2 },
   ];
 
   return (

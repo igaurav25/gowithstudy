@@ -1,0 +1,122 @@
+name: CampusFlow CI/CD Pipeline
+
+on:
+  push:
+    branches: [main, master, "feat/*"]
+  pull_request:
+    branches: [main, master]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_ENV: test
+  NEXT_TELEMETRY_DISABLED: 1
+  DATABASE_URL: "postgresql://ci_user:ci_pass@localhost:5432/campusflow_ci"
+  AUTH_SECRET: "ci-automated-testing-secret-key-32chars-min"
+  SESSION_COOKIE_NAME: "campusflow_session"
+
+jobs:
+  # Job 1: Static Analysis (Lint & TypeScript Compilation)
+  validate:
+    name: Code Quality & Type Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.x
+          cache: "npm"
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Generate Prisma Client
+        run: npx prisma generate
+
+      - name: TypeScript Type Checking
+        run: npx tsc --noEmit
+
+  # Job 2: Automated Test Execution (Vitest Suite)
+  test:
+    name: Automated Unit, Integration & E2E Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.x
+          cache: "npm"
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Generate Prisma Client
+        run: npx prisma generate
+
+      - name: Execute Vitest Test Suites
+        run: npm test
+
+  # Job 3: Production Bundle Verification
+  build:
+    name: Next.js Production Build
+    needs: [validate, test]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.x
+          cache: "npm"
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Generate Prisma Client
+        run: npx prisma generate
+
+      - name: Build Next.js Standalone Bundle
+        run: npm run build
+
+  # Job 4: Container Build & Verification
+  docker:
+    name: Docker Image Build & Healthcheck
+    needs: [build]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker Container Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: false
+          tags: campusflow:ci-test
+          load: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Verify Container Execution & Health
+        run: |
+          docker run -d --name campusflow-test-instance \
+            -e DATABASE_URL="postgresql://test:test@localhost:5432/campusflow" \
+            -e AUTH_SECRET="ci-automated-testing-secret-key-32chars-min" \
+            -p 3000:3000 campusflow:ci-test
+          sleep 10
+          curl -f http://localhost:3000/ || exit 1
+          docker stop campusflow-test-instance

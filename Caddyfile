@@ -1,0 +1,28 @@
+# CampusFlow Caddyfile — Production Reverse Proxy with Automatic HTTPS
+{$DOMAIN_NAME:campusflow.edu} {
+    # Reverse proxy to the internal Next.js container
+    reverse_proxy web:3000 {
+        header_up Host {host}
+        header_up X-Real-IP {remote_host}
+        header_up X-Forwarded-For {remote_host}
+        header_up X-Forwarded-Proto {scheme}
+    }
+
+    # Enable modern Gzip and Zstandard compression
+    encode zstd gzip
+
+    # Production Security Headers
+    header {
+        Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        Permissions-Policy "camera=(), microphone=(), geolocation=()"
+    }
+
+    # Logging
+    log {
+        output stdout
+        format console
+    }
+}

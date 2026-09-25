@@ -1,0 +1,135 @@
+name: campusflow-prod
+
+services:
+  # Next.js Application Production Container
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: campusflow-web-prod
+    restart: always
+    expose:
+      - "3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}?schema=public&connection_limit=20&pool_timeout=30
+      - AUTH_SECRET=${AUTH_SECRET}
+      - SESSION_COOKIE_NAME=${SESSION_COOKIE_NAME:-campusflow_session}
+      - NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL}
+      - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+    deploy:
+      resources:
+        limits:
+          cpus: "2.00"
+          memory: 2048M
+        reservations:
+          cpus: "0.50"
+          memory: 512M
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "5"
+    networks:
+      - campusflow-internal-net
+
+  # PostgreSQL Hardened Database
+  db:
+    image: postgres:16-alpine
+    container_name: campusflow-db-prod
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - postgres_prod_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    deploy:
+      resources:
+        limits:
+          cpus: "2.00"
+          memory: 2048M
+        reservations:
+          cpus: "0.50"
+          memory: 512M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "5"
+    networks:
+      - campusflow-internal-net
+
+  # Redis In-Memory Cache with Authentication
+  redis:
+    image: redis:7-alpine
+    container_name: campusflow-redis-prod
+    restart: always
+    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD}"]
+    volumes:
+      - redis_prod_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 512M
+    networks:
+      - campusflow-internal-net
+
+  # Caddy Reverse Proxy with Automatic Let's Encrypt SSL/TLS
+  caddy:
+    image: caddy:2-alpine
+    container_name: campusflow-caddy-prod
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      - DOMAIN_NAME=${DOMAIN_NAME:-campusflow.edu}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - web
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "5"
+    networks:
+      - campusflow-internal-net
+
+volumes:
+  postgres_prod_data:
+    name: campusflow_postgres_prod_data
+  redis_prod_data:
+    name: campusflow_redis_prod_data
+  caddy_data:
+    name: campusflow_caddy_data
+  caddy_config:
+    name: campusflow_caddy_config
+
+networks:
+  campusflow-internal-net:
+    name: campusflow-internal-net
+    driver: bridge

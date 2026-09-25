@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { isDbConnected } from "@/lib/db-check";
 import {
   AssignmentPriority,
   AssignmentStatus,
@@ -154,37 +155,39 @@ export class AssignmentsService {
     filters?: AssignmentsFilterInput
   ): Promise<AssignmentItem[]> {
     try {
-      const dbEntries = await prisma.assignment.findMany({
-        where: {
-          userId,
-          ...(filters?.status && filters.status !== "ALL"
-            ? { status: filters.status }
-            : {}),
-          ...(filters?.priority && filters.priority !== "ALL"
-            ? { priority: filters.priority }
-            : {}),
-          ...(filters?.subject && filters.subject !== "ALL"
-            ? { subject: filters.subject }
-            : {}),
-          ...(filters?.query
-            ? {
-                OR: [
-                  { title: { contains: filters.query, mode: "insensitive" } },
-                  { description: { contains: filters.query, mode: "insensitive" } },
-                ],
-              }
-            : {}),
-        },
-        orderBy: { dueDate: "asc" },
-      });
+      if (await isDbConnected()) {
+        const dbEntries = await prisma.assignment.findMany({
+          where: {
+            userId,
+            ...(filters?.status && filters.status !== "ALL"
+              ? { status: filters.status }
+              : {}),
+            ...(filters?.priority && filters.priority !== "ALL"
+              ? { priority: filters.priority }
+              : {}),
+            ...(filters?.subject && filters.subject !== "ALL"
+              ? { subject: filters.subject }
+              : {}),
+            ...(filters?.query
+              ? {
+                  OR: [
+                    { title: { contains: filters.query, mode: "insensitive" } },
+                    { description: { contains: filters.query, mode: "insensitive" } },
+                  ],
+                }
+              : {}),
+          },
+          orderBy: { dueDate: "asc" },
+        });
 
-      if (dbEntries && dbEntries.length > 0) {
-        return dbEntries.map((a) => ({
-          ...a,
-          priority: a.priority as AssignmentPriority,
-          status: a.status as AssignmentStatus,
-          ...calculateDueDetails(new Date(a.dueDate)),
-        }));
+        if (dbEntries && dbEntries.length > 0) {
+          return dbEntries.map((a) => ({
+            ...a,
+            priority: a.priority as AssignmentPriority,
+            status: a.status as AssignmentStatus,
+            ...calculateDueDetails(new Date(a.dueDate)),
+          }));
+        }
       }
     } catch {
       // In-memory fallback

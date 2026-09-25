@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { isDbConnected } from "@/lib/db-check";
 import {
   NotificationType,
   NotificationPriority,
@@ -215,12 +216,13 @@ export const NotificationsService = {
         }
       }
 
-      const dbNotifications = await prisma.notification.findMany({
-        where,
-        orderBy: { createdAt: "desc" },
-      });
+      if (await isDbConnected()) {
+        const dbNotifications = await prisma.notification.findMany({
+          where,
+          orderBy: { createdAt: "desc" },
+        });
 
-      if (dbNotifications && dbNotifications.length > 0) {
+        if (dbNotifications && dbNotifications.length > 0) {
         return dbNotifications.map((n) => ({
           id: n.id,
           userId: n.userId,
@@ -236,9 +238,10 @@ export const NotificationsService = {
           updatedAt: n.updatedAt.toISOString(),
         }));
       }
-    } catch {
-      // Fallback to in-memory store
     }
+  } catch {
+    // Fallback to in-memory store
+  }
 
     // In-memory filtering
     let list = [...inMemoryNotifications];

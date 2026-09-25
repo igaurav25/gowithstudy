@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { isDbConnected } from "@/lib/db-check";
 import {
   DayOfWeek,
   CreateTimetableEntryInput,
@@ -244,7 +245,8 @@ export class TimetableService {
    */
   static async getWeeklyTimetable(userId: string): Promise<TimetableItem[]> {
     try {
-      const dbEntries = await prisma.timetableEntry.findMany({
+      if (await isDbConnected()) {
+        const dbEntries = await prisma.timetableEntry.findMany({
         where: { userId },
         orderBy: [{ day: "asc" }, { startTime: "asc" }],
       });
@@ -255,9 +257,10 @@ export class TimetableService {
           day: e.day as DayOfWeek,
         }));
       }
-    } catch {
-      // In-memory fallback
     }
+  } catch {
+    // In-memory fallback
+  }
 
     const list = getUserTimetableList(userId);
     // Sort by day order then start time

@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { isDbConnected } from "@/lib/db-check";
 import {
   CreateNoteInput,
   UpdateNoteInput,
@@ -562,8 +563,8 @@ export class NotesService {
     filters?: NotesFilterInput
   ): Promise<NoteItem[]> {
     try {
-      // First attempt database query if connected
-      const dbNotes = await prisma.note.findMany({
+      if (await isDbConnected()) {
+        const dbNotes = await prisma.note.findMany({
         where: {
           userId,
           isArchived: filters?.isArchived ?? false,
@@ -600,9 +601,10 @@ export class NotesService {
           fileName: n.fileUrl ? n.fileUrl.split("/").pop() || null : null,
         }));
       }
-    } catch {
-      // Fallback to in-memory store if DB is disconnected
     }
+  } catch {
+    // Fallback to in-memory store if DB is disconnected
+  }
 
     // Filter in-memory store
     let notes = [...getUserNotesList(userId)];
@@ -666,7 +668,8 @@ export class NotesService {
    */
   static async getNoteById(id: string, userId: string): Promise<NoteItem | null> {
     try {
-      const note = await prisma.note.findFirst({
+      if (await isDbConnected()) {
+        const note = await prisma.note.findFirst({
         where: { id, userId },
       });
       if (note) {
@@ -676,9 +679,10 @@ export class NotesService {
           fileName: note.fileUrl ? note.fileUrl.split("/").pop() || null : null,
         };
       }
-    } catch {
-      // Fallback
     }
+  } catch {
+    // Fallback
+  }
 
     const list = getUserNotesList(userId);
     const found = list.find((n) => n.id === id && n.userId === userId);

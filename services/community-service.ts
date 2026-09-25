@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { isDbConnected } from "@/lib/db-check";
 import {
   CommunityCategory,
   CommunityFilterInput,
@@ -361,7 +362,8 @@ export class CommunityService {
     initializeDemoData();
 
     try {
-      const dbPosts = await prisma.communityPost.findMany({
+      if (await isDbConnected()) {
+        const dbPosts = await prisma.communityPost.findMany({
         orderBy: { createdAt: "desc" },
         include: {
           comments: {
@@ -415,9 +417,10 @@ export class CommunityService {
 
         return this.applyFilters(list, filters);
       }
-    } catch {
-      // In-memory fallback
     }
+  } catch {
+    // In-memory fallback
+  }
 
     let list = mockPosts.map((p) => {
       const pComments = mockComments.filter((c) => c.postId === p.id);

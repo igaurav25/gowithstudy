@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { isDbConnected } from "@/lib/db-check";
 import {
   CreateJoinRequestInput,
   CreateProjectInput,
@@ -335,7 +336,8 @@ export class ProjectsService {
     initializeDemoData();
 
     try {
-      const dbProjects = await prisma.project.findMany({
+      if (await isDbConnected()) {
+        const dbProjects = await prisma.project.findMany({
         orderBy: { createdAt: "desc" },
         include: {
           members: true,
@@ -401,9 +403,10 @@ export class ProjectsService {
 
         return this.applyFilters(list, filters);
       }
-    } catch {
-      // In-memory fallback
     }
+  } catch {
+    // In-memory fallback
+  }
 
     const list = mockProjects.map((p) => {
       const isOwner = currentUserId ? p.ownerId === currentUserId : false;

@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { isDbConnected } from "@/lib/db-check";
 import {
   ApplicationStatus,
   JobType,
@@ -241,7 +242,8 @@ export class InternshipsService {
     filters?: Partial<InternshipFilterInput>
   ): Promise<InternshipApplicationItem[]> {
     try {
-      const dbEntries = await prisma.internshipApplication.findMany({
+      if (await isDbConnected()) {
+        const dbEntries = await prisma.internshipApplication.findMany({
         where: { userId },
         orderBy: { applicationDate: "desc" },
       });
@@ -259,9 +261,10 @@ export class InternshipsService {
         }));
         return this.applyFilters(list, filters);
       }
-    } catch {
-      // In-memory fallback
     }
+  } catch {
+    // In-memory fallback
+  }
 
     const list = [...getUserApplicationsList(userId)];
     return this.applyFilters(list, filters);

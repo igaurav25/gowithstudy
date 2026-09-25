@@ -238,7 +238,7 @@ export class InternshipsService {
    */
   static async getApplications(
     userId: string,
-    filters?: InternshipFilterInput
+    filters?: Partial<InternshipFilterInput>
   ): Promise<InternshipApplicationItem[]> {
     try {
       const dbEntries = await prisma.internshipApplication.findMany({
@@ -247,7 +247,7 @@ export class InternshipsService {
       });
 
       if (dbEntries && dbEntries.length > 0) {
-        let list: InternshipApplicationItem[] = dbEntries.map((e) => ({
+        const list: InternshipApplicationItem[] = dbEntries.map((e) => ({
           ...e,
           jobType: (e as any).jobType || "INTERNSHIP",
           workMode: (e as any).workMode || "HYBRID",
@@ -269,7 +269,7 @@ export class InternshipsService {
 
   private static applyFilters(
     list: InternshipApplicationItem[],
-    filters?: InternshipFilterInput
+    filters?: Partial<InternshipFilterInput>
   ): InternshipApplicationItem[] {
     let result = [...list];
 

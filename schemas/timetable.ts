@@ -11,7 +11,7 @@ export const DAYS_OF_WEEK = [
 
 export type DayOfWeek = (typeof DAYS_OF_WEEK)[number];
 
-export const createTimetableEntrySchema = z.object({
+export const baseTimetableEntrySchema = z.object({
   subject: z
     .string()
     .trim()
@@ -27,7 +27,9 @@ export const createTimetableEntrySchema = z.object({
     .regex(/^([01]\d|2[0-3]):([0-5]\d)$/, "Invalid end time format (HH:MM)"),
   room: z.string().trim().max(30).optional().or(z.literal("")),
   notes: z.string().trim().max(300).optional().or(z.literal("")),
-}).refine(
+});
+
+export const createTimetableEntrySchema = baseTimetableEntrySchema.refine(
   (data) => {
     // Ensure startTime is before endTime
     const [startH, startM] = data.startTime.split(":").map(Number);
@@ -42,5 +44,5 @@ export const createTimetableEntrySchema = z.object({
 
 export type CreateTimetableEntryInput = z.infer<typeof createTimetableEntrySchema>;
 
-export const updateTimetableEntrySchema = createTimetableEntrySchema.partial();
+export const updateTimetableEntrySchema = baseTimetableEntrySchema.partial();
 export type UpdateTimetableEntryInput = z.infer<typeof updateTimetableEntrySchema>;

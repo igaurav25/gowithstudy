@@ -82,8 +82,8 @@ export function sanitizeFileName(fileName: string): string {
     .replace(/[/\\]/g, "_")
     // Keep only alphanumeric characters, dots, underscores, and dashes
     .replace(/[^a-zA-Z0-9._-]/g, "_")
-    // Strip leading dots to prevent hidden files
-    .replace(/^\.+/, "")
+    // Strip leading dots, underscores, and dashes to prevent hidden files and separator artifacts
+    .replace(/^[._-]+/, "")
     .trim();
 }
 

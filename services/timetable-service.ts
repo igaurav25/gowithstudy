@@ -1,7 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import {
   DayOfWeek,
-  DAYS_OF_WEEK,
   CreateTimetableEntryInput,
   UpdateTimetableEntryInput,
 } from "@/schemas/timetable";
@@ -502,7 +501,7 @@ export class TimetableService {
       Saturday: "SA",
     };
 
-    let icsContent = [
+    const icsContent = [
       "BEGIN:VCALENDAR",
       "VERSION:2.0",
       "PRODID:-//CampusFlow//Academic Schedule v1.0//EN",
@@ -521,6 +520,8 @@ export class TimetableService {
         "BEGIN:VEVENT",
         `UID:${c.id}@campusflow.edu`,
         `DTSTAMP:${new Date().toISOString().replace(/[-:]/g, "").split(".")[0]}Z`,
+        `DTSTART;TZID=Asia/Kolkata:20260101T${startClean}`,
+        `DTEND;TZID=Asia/Kolkata:20260101T${endClean}`,
         `RRULE:FREQ=WEEKLY;BYDAY=${dayCode}`,
         `SUMMARY:${c.subject} (${c.room || "Classroom"})`,
         `DESCRIPTION:${c.faculty ? `Faculty: ${c.faculty}\\n` : ""}${c.notes || ""}`,

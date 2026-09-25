@@ -1,14 +1,19 @@
 {
   "name": "campusflow",
-  "version": "0.1.0",
+  "version": "1.0.0",
+  "description": "Production-grade unified student operating system and academic SaaS platform combining academics, AI-powered study assistant (RAG), DSA tracker, internship pipeline, and student community.",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "type-check": "tsc --noEmit",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "db:generate": "prisma generate",
+    "db:push": "prisma db push",
+    "db:migrate": "prisma migrate deploy"
   },
   "dependencies": {
     "@prisma/client": "^6.19.3",

@@ -7,7 +7,7 @@ import { TimetableClientView } from "@/components/timetable/timetable-client-vie
 import { DayOfWeek } from "@/schemas/timetable";
 
 export const metadata = {
-  title: "Class Timetable & Schedule | CampusFlow",
+  title: "Class Timetable & Schedule | GoWithStudy",
   description:
     "Interactive weekly schedule grid, real-time ongoing lecture tracker, clash detector, and RFC 5545 iCal export for BTech CSE students.",
 };

@@ -6,7 +6,7 @@ import { DashboardNav } from "@/components/dashboard/dashboard-nav";
 import { NotesClientView } from "@/components/notes/notes-client-view";
 
 export const metadata = {
-  title: "Study Notes & Materials | CampusFlow",
+  title: "Study Notes & Materials | GoWithStudy",
   description:
     "Organize lecture notes, syllabus PDFs, and revision cheatsheets with full-text search and AI study grounding.",
 };

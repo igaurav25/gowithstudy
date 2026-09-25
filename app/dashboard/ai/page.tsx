@@ -6,7 +6,7 @@ import { DashboardNav } from "@/components/dashboard/dashboard-nav";
 import { AIWorkspace } from "@/components/ai/ai-workspace";
 
 export const metadata = {
-  title: "AI Study Copilot & Grounded RAG | CampusFlow",
+  title: "AI Study Copilot & Grounded RAG | GoWithStudy",
   description:
     "Ask conceptual questions, generate practice quizzes, and extract cheatsheets grounded directly in your syllabus and course notes.",
 };

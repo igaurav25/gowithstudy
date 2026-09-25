@@ -52,7 +52,7 @@ export function LandingHero() {
           </Link>
           <a href="#features">
             <Button variant="outline" size="lg">
-              Explore CampusFlow
+              Explore GoWithStudy
             </Button>
           </a>
         </div>
@@ -82,7 +82,7 @@ export function LandingHero() {
                 <span className="w-3 h-3 rounded-full bg-rose-400/80" />
                 <span className="w-3 h-3 rounded-full bg-amber-400/80" />
                 <span className="w-3 h-3 rounded-full bg-emerald-400/80" />
-                <span className="ml-3 text-xs font-mono text-zinc-400">campusflow.app/dashboard</span>
+                <span className="ml-3 text-xs font-mono text-zinc-400">gowithstudy.vercel.app/dashboard</span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-xs px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-medium">

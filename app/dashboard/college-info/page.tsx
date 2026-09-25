@@ -8,7 +8,7 @@ import { DashboardNav } from "@/components/dashboard/dashboard-nav";
 import { CollegeInfoClientView } from "@/components/college-info/college-info-client-view";
 
 export const metadata = {
-  title: "College-Specific Verified Information | CampusFlow",
+  title: "College-Specific Verified Information | GoWithStudy",
   description:
     "Official university source of truth for academic circulars, exam schedules, fee concessions, and capstone guidelines.",
 };

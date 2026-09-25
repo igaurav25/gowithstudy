@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { ShieldAlert, ArrowLeft } from "lucide-react";
 
 export const metadata = {
-  title: "Admin & Governance Console | CampusFlow",
+  title: "Admin & Governance Console | GoWithStudy",
   description:
     "Student role management, community moderation queue, verified announcements, and system audit trail.",
 };

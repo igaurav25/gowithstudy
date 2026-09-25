@@ -45,7 +45,7 @@ export default function LoginPage() {
               <GraduationCap className="w-5 h-5" />
             </div>
             <span className="font-bold text-xl tracking-tight text-zinc-900 dark:text-zinc-50">
-              CampusFlow
+              GoWithStudy
             </span>
           </Link>
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100">
@@ -171,13 +171,13 @@ export default function LoginPage() {
                 className="w-full mt-2"
                 isLoading={isPending}
               >
-                <span>Sign In to CampusFlow</span>
+                <span>Sign In to GoWithStudy</span>
                 <ArrowRight className="w-4 h-4 ml-1.5" />
               </Button>
             </form>
 
             <div className="mt-6 pt-5 border-t border-zinc-200 dark:border-zinc-800 text-center text-xs text-zinc-500">
-              New to CampusFlow?{" "}
+              New to GoWithStudy?{" "}
               <Link href="/signup" className="font-semibold text-indigo-600 dark:text-indigo-400 hover:underline">
                 Create an account
               </Link>

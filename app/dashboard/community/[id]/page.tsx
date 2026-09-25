@@ -13,10 +13,10 @@ export async function generateMetadata({ params }: PostDetailPageProps) {
   const { id } = await params;
   const post = await CommunityService.getPostById(id);
   if (!post) {
-    return { title: "Discussion Not Found | CampusFlow" };
+    return { title: "Discussion Not Found | GoWithStudy" };
   }
   return {
-    title: `${post.title} | CampusFlow Community`,
+    title: `${post.title} | GoWithStudy Community`,
     description: post.content.slice(0, 150),
   };
 }

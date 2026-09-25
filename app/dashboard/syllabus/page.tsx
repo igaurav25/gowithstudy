@@ -6,7 +6,7 @@ import { DashboardNav } from "@/components/dashboard/dashboard-nav";
 import { SyllabusClientView } from "@/components/syllabus/syllabus-client-view";
 
 export const metadata = {
-  title: "B.Tech CSE Syllabus & Curriculum | CampusFlow",
+  title: "B.Tech CSE Syllabus & Curriculum | GoWithStudy",
   description:
     "Official semester-wise B.Tech Computer Science syllabus, unit-wise chapters, exam weightage, and prescribed reference textbooks.",
 };

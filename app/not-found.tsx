@@ -3,8 +3,8 @@ import { Compass, ArrowLeft, LayoutDashboard, Building2, FileText } from "lucide
 import { Button } from "@/components/ui/button";
 
 export const metadata = {
-  title: "404 - Page Not Found | CampusFlow",
-  description: "The requested campus page or resource could not be found.",
+  title: "404 - Page Not Found | GoWithStudy",
+  description: "The requested study page or resource could not be found.",
 };
 
 export default function NotFound() {
@@ -52,7 +52,7 @@ export default function NotFound() {
             className="text-xs font-medium text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-300 inline-flex items-center gap-1.5 transition-colors"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
-            <span>Back to CampusFlow Home</span>
+            <span>Back to GoWithStudy Home</span>
           </Link>
         </div>
       </div>

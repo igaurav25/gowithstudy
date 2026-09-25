@@ -47,7 +47,7 @@ export function LandingAIShowcase() {
             </h2>
 
             <p className="text-base sm:text-lg text-zinc-600 dark:text-zinc-400 leading-relaxed">
-              Standard AI chatbots make things up. CampusFlow utilizes Retrieval-Augmented Generation (RAG) to embed and index your uploaded PDFs so every answer is backed by exact page citations from your course syllabus.
+              Standard AI chatbots make things up. GoWithStudy utilizes Retrieval-Augmented Generation (RAG) to embed and index your uploaded PDFs so every answer is backed by exact page citations from your course syllabus.
             </p>
 
             <div className="space-y-4 pt-2">
@@ -82,7 +82,7 @@ export function LandingAIShowcase() {
                       <Sparkles className="w-5 h-5" />
                     </div>
                     <div>
-                      <CardTitle className="text-sm">CampusFlow AI Copilot</CardTitle>
+                      <CardTitle className="text-sm">GoWithStudy AI Copilot</CardTitle>
                       <p className="text-xs text-zinc-500 flex items-center gap-1.5">
                         <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" />
                         Grounded in 4 Course Documents

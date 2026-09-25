@@ -40,7 +40,7 @@ export function LandingSecuritySection() {
             Security built as a first-class feature
           </h2>
           <p className="mt-4 text-base sm:text-lg text-zinc-600 dark:text-zinc-400">
-            CampusFlow was architected from line one following defense-in-depth security principles. Your academic data, career records, and credentials are protected at all times.
+            GoWithStudy was architected from line one following defense-in-depth security principles. Your academic data, career records, and credentials are protected at all times.
           </p>
         </div>
 

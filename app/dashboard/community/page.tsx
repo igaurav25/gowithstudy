@@ -6,7 +6,7 @@ import { DashboardNav } from "@/components/dashboard/dashboard-nav";
 import { CommunityFeedView } from "@/components/community/community-feed-view";
 
 export const metadata = {
-  title: "Student Community & Doubts | CampusFlow",
+  title: "Student Community & Doubts | GoWithStudy",
   description:
     "Ask academic doubts, participate in college discussions, exchange placement tips, and learn with peers.",
 };

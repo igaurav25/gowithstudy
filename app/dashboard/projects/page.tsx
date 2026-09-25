@@ -6,7 +6,7 @@ import { DashboardNav } from "@/components/dashboard/dashboard-nav";
 import { ProjectsClientView } from "@/components/projects/projects-client-view";
 
 export const metadata = {
-  title: "Project Team Finder | CampusFlow",
+  title: "Project Team Finder | GoWithStudy",
   description:
     "Find teammates for hackathons, capstones, open-source repos, and campus startup ventures.",
 };

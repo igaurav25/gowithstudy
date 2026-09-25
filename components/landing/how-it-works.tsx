@@ -41,7 +41,7 @@ export function LandingHowItWorks() {
             Workflow
           </Badge>
           <h2 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-zinc-900 dark:text-zinc-50">
-            How CampusFlow powers your journey
+            How GoWithStudy powers your journey
           </h2>
           <p className="mt-4 text-base sm:text-lg text-zinc-600 dark:text-zinc-400">
             From your first semester lecture to placement day, follow a streamlined 4-step workflow designed for student success.

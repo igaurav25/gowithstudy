@@ -11,15 +11,15 @@ export function LandingFAQSection() {
   const faqs = [
     {
       q: "How does the AI Study Assistant answer questions from my PDFs?",
-      a: "CampusFlow uses Retrieval-Augmented Generation (RAG). When you upload a lecture PDF, our pipeline extracts the text, segments it into semantic chunks, and creates vector embeddings. When you ask a question, the system finds the most relevant passages from your document and feeds them into the AI model, producing accurate answers with exact page numbers.",
+      a: "GoWithStudy uses Retrieval-Augmented Generation (RAG). When you upload a lecture PDF, our pipeline extracts the text, segments it into semantic chunks, and creates vector embeddings. When you ask a question, the system finds the most relevant passages from your document and feeds them into the AI model, producing accurate answers with exact page numbers.",
     },
     {
       q: "Is my personal data and job application tracker kept private?",
       a: "Yes. All your study notes, personal timetable, assignments, DSA logs, and internship pipeline entries are strictly tied to your authenticated user ID. Nobody else — not even other students from your college — can view your private records.",
     },
     {
-      q: "Can I use CampusFlow on my phone or tablet?",
-      a: "Absolutely. CampusFlow is built using mobile-first responsive architecture. The timetable, notifications, assignment checklists, and AI chat work seamlessly across smartphones, tablets, and desktop displays.",
+      q: "Can I use GoWithStudy on my phone or tablet?",
+      a: "Absolutely. GoWithStudy is built using mobile-first responsive architecture. The timetable, notifications, assignment checklists, and AI chat work seamlessly across smartphones, tablets, and desktop displays.",
     },
     {
       q: "How does the Project Team Finder work?",
@@ -27,10 +27,10 @@ export function LandingFAQSection() {
     },
     {
       q: "What types of files can I upload to Notes?",
-      a: "Currently, CampusFlow supports standard PDF documents up to 25MB each. Future updates will also support DOCX and Markdown formats.",
+      a: "Currently, GoWithStudy supports standard PDF documents up to 25MB each. Future updates will also support DOCX and Markdown formats.",
     },
     {
-      q: "How does CampusFlow ensure official college information is accurate?",
+      q: "How does GoWithStudy ensure official college information is accurate?",
       a: "Official announcements, notices, and exam timetables are strictly managed by verified College Administrators and Moderators. AI is never allowed to invent or hallucinate official institutional policies.",
     },
   ];

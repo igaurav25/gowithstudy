@@ -142,7 +142,7 @@ export function LandingFooter() {
 
         {/* Bottom Bar */}
         <div className="mt-14 pt-8 border-t border-zinc-200 dark:border-zinc-800 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-zinc-500">
-          <p>© {new Date().getFullYear()} CampusFlow. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} {siteConfig.name}. All rights reserved.</p>
           <p className="flex items-center gap-1">
             Engineered with <Heart className="w-3.5 h-3.5 text-rose-500 fill-rose-500" /> for university students.
           </p>

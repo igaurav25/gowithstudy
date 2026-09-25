@@ -6,7 +6,7 @@ import { DashboardNav } from "@/components/dashboard/dashboard-nav";
 import { InternshipsClientView } from "@/components/internships/internships-client-view";
 
 export const metadata = {
-  title: "Internship & Job Pipeline Tracker | CampusFlow",
+  title: "Internship & Job Pipeline Tracker | GoWithStudy",
   description:
     "Interactive Kanban pipeline, OA deadlines, interview logs, and offer tracker for computer science students.",
 };

@@ -6,7 +6,7 @@ import { DashboardNav } from "@/components/dashboard/dashboard-nav";
 import { AssignmentsClientView } from "@/components/assignments/assignments-client-view";
 
 export const metadata = {
-  title: "Assignments & Project Deadlines | CampusFlow",
+  title: "Assignments & Project Deadlines | GoWithStudy",
   description:
     "Track coursework submissions, lab reports, and deadlines with priority countdown alerts and progress stats for BTech CSE students.",
 };

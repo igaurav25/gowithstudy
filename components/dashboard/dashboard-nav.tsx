@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { siteConfig } from "@/config/site";
 import { UserSessionPayload } from "@/lib/rbac";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
 import { NotificationsDrawer } from "@/components/dashboard/notifications-drawer";
@@ -58,7 +59,7 @@ export function DashboardNav({
               <GraduationCap className="w-5 h-5" />
             </div>
             <span className="font-bold text-lg tracking-tight text-zinc-900 dark:text-zinc-50">
-              CampusFlow
+              {siteConfig.name}
             </span>
           </Link>
           <Badge variant="purple" className="text-[10px] hidden sm:inline-flex">

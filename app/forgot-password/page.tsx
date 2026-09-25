@@ -31,7 +31,7 @@ export default function ForgotPasswordPage() {
               <GraduationCap className="w-5 h-5" />
             </div>
             <span className="font-bold text-xl tracking-tight text-zinc-900 dark:text-zinc-50">
-              CampusFlow
+              GoWithStudy
             </span>
           </Link>
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100">

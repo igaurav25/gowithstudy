@@ -7,7 +7,7 @@ import { DashboardNav } from "@/components/dashboard/dashboard-nav";
 import { NotificationsCenterView } from "@/components/notifications/notifications-center-view";
 
 export const metadata = {
-  title: "Notification Center | CampusFlow",
+  title: "Notification Center | GoWithStudy",
   description:
     "Track assignment reminders, deadline alerts, teammate applications, and system notices.",
 };

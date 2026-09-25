@@ -6,7 +6,7 @@ import { DashboardNav } from "@/components/dashboard/dashboard-nav";
 import { DSAClientView } from "@/components/dsa/dsa-client-view";
 
 export const metadata = {
-  title: "Placement & DSA Practice Tracker | CampusFlow",
+  title: "Placement & DSA Practice Tracker | GoWithStudy",
   description:
     "Curated technical interview coding sheet, Blind 75 algorithms, live solve streak, and revision queue for BTech CSE students.",
 };

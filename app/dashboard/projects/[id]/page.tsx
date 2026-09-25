@@ -13,10 +13,10 @@ export async function generateMetadata({ params }: ProjectDetailPageProps) {
   const { id } = await params;
   const project = await ProjectsService.getProjectById(id);
   if (!project) {
-    return { title: "Project Not Found | CampusFlow" };
+    return { title: "Project Not Found | GoWithStudy" };
   }
   return {
-    title: `${project.title} | CampusFlow Projects`,
+    title: `${project.title} | GoWithStudy Projects`,
     description: project.description.slice(0, 150),
   };
 }

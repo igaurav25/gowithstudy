@@ -2,15 +2,15 @@
 
 import * as React from "react";
 import { Button } from "@/components/ui/button";
-import { AIStudyMode, STUDY_MODES } from "@/schemas/ai";
+import { AIStudyMode } from "@/schemas/ai";
 import {
   Send,
-  Sparkles,
   BookOpen,
   HelpCircle,
   FileText,
   Code2,
   Loader2,
+  Square,
 } from "lucide-react";
 
 interface ChatInputProps {
@@ -18,6 +18,8 @@ interface ChatInputProps {
   onInputChange: (val: string) => void;
   onSubmit: (e: React.FormEvent) => void;
   isLoading: boolean;
+  isStreaming?: boolean;
+  onStopStreaming?: () => void;
   selectedMode: AIStudyMode;
   onModeChange: (mode: AIStudyMode) => void;
 }
@@ -27,6 +29,8 @@ export function ChatInput({
   onInputChange,
   onSubmit,
   isLoading,
+  isStreaming = false,
+  onStopStreaming,
   selectedMode,
   onModeChange,
 }: ChatInputProps) {
@@ -35,7 +39,7 @@ export function ChatInput({
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      if (input.trim() && !isLoading) {
+      if (input.trim() && !isLoading && !isStreaming) {
         onSubmit(e);
       }
     }
@@ -91,30 +95,48 @@ export function ChatInput({
               ? "Ask for a concise cheatsheet, e.g. 'Summarize BCNF vs 3NF with examples'..."
               : selectedMode === "CODE"
               ? "Ask for an algorithm implementation, e.g. 'Show me 0/1 Knapsack in Java'..."
-              : "Ask any academic question grounded in your course materials..."
+              : "Ask any academic question grounded in your course materials (e.g. CPU Scheduling, Normalization)..."
           }
           className="flex-1 max-h-32 min-h-[44px] p-2.5 text-xs sm:text-sm bg-transparent border-0 focus:outline-none focus:ring-0 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 resize-none leading-relaxed"
         />
 
-        <Button
-          type="submit"
-          disabled={!input.trim() || isLoading}
-          className="h-10 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white shadow-md shadow-indigo-500/20 shrink-0 gap-1.5"
-        >
-          {isLoading ? (
-            <Loader2 className="w-4 h-4 animate-spin" />
-          ) : (
-            <>
-              <Send className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline text-xs font-semibold">Ask Copilot</span>
-            </>
-          )}
-        </Button>
+        {isStreaming ? (
+          <Button
+            type="button"
+            onClick={onStopStreaming}
+            className="h-10 px-4 rounded-xl bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:hover:bg-white text-white dark:text-zinc-900 shadow-md shrink-0 gap-1.5 animate-in fade-in"
+            title="Stop generating response"
+          >
+            <Square className="w-3.5 h-3.5 fill-current" />
+            <span className="text-xs font-semibold">Stop</span>
+          </Button>
+        ) : (
+          <Button
+            type="submit"
+            disabled={!input.trim() || isLoading}
+            className="h-10 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white shadow-md shadow-indigo-500/20 shrink-0 gap-1.5 transition-all"
+          >
+            {isLoading ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span className="hidden sm:inline text-xs font-semibold">Thinking...</span>
+              </>
+            ) : (
+              <>
+                <Send className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline text-xs font-semibold">Ask Copilot</span>
+              </>
+            )}
+          </Button>
+        )}
       </form>
 
       {/* Footer shortcut helper */}
       <div className="flex items-center justify-between text-[11px] text-zinc-400 px-1 pt-0.5">
-        <span>Grounded with Document Citations</span>
+        <span className="flex items-center gap-1.5">
+          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+          ChatGPT-style Stream Active
+        </span>
         <span className="hidden sm:inline">Press Enter to send, Shift + Enter for newline</span>
       </div>
     </div>

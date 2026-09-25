@@ -15,14 +15,9 @@ import {
 } from "@/features/ai/actions";
 import {
   Sparkles,
-  FileText,
   RotateCcw,
-  BookOpen,
   HelpCircle,
-  FileCheck2,
-  Layers,
-  ArrowRight,
-  ShieldCheck,
+  FileText,
 } from "lucide-react";
 
 interface AIWorkspaceProps {
@@ -38,23 +33,24 @@ export function AIWorkspace({
   const [selectedMode, setSelectedMode] = React.useState<AIStudyMode>("EXPLAIN");
   const [input, setInput] = React.useState("");
   const [isLoading, setIsLoading] = React.useState(false);
+  const [isStreaming, setIsStreaming] = React.useState(false);
 
   // Initial welcome message from CampusFlow AI
   const [messages, setMessages] = React.useState<AIMessage[]>([
     {
       id: "welcome_msg",
       role: "assistant",
-      content: `👋 Hello! I am your **CampusFlow AI Study Copilot**.
+      content: `👋 Hello! I am your **CampusFlow AI Study Copilot** (ChatGPT-style with Document Grounding).
 
-I read and ground my responses directly in your uploaded lecture notes, syllabus PDFs, and revision materials using Retrieval-Augmented Generation (RAG).
+I ground my responses directly in your accredited B.Tech CSE syllabus, lecture notes, and revision materials using Retrieval-Augmented Generation (RAG).
 
 **What would you like to explore today?**
-* **Explain Concepts:** Ask for deep breakdowns of complex CS algorithms or systems topics with real-world analogies.
+* **Explain Concepts:** Deep breakdown of CPU Scheduling, Deadlocks, Normalization (1NF-BCNF), TCP/IP Handshake, or DP Knapsack.
 * **Practice Quizzes:** Test your exam readiness with interactive multiple-choice questions.
 * **Cheatsheets & Summaries:** Generate structured revision templates and key formulas.
-* **Code Implementation:** Get clean Java, C++, or Python algorithms with space/time complexity analysis.
+* **Code Implementation:** Clean C, Java, or Python algorithms with space/time complexity analysis.
 
-Select a document from the context dropdown above or try one of the suggested prompts below!`,
+Select a document from the context dropdown or try one of the suggested prompts below!`,
       mode: "EXPLAIN",
       citations: [],
       timestamp: new Date(),
@@ -62,6 +58,8 @@ Select a document from the context dropdown above or try one of the suggested pr
   ]);
 
   const messagesEndRef = React.useRef<HTMLDivElement>(null);
+  const streamTimerRef = React.useRef<NodeJS.Timeout | null>(null);
+  const lastUserQueryRef = React.useRef<string>("");
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -69,125 +67,204 @@ Select a document from the context dropdown above or try one of the suggested pr
 
   React.useEffect(() => {
     scrollToBottom();
-  }, [messages, isLoading]);
+  }, [messages, isLoading, isStreaming]);
+
+  // Cleanup streaming timer on unmount
+  React.useEffect(() => {
+    return () => {
+      if (streamTimerRef.current) clearInterval(streamTimerRef.current);
+    };
+  }, []);
 
   // Find currently selected note title
   const currentNote = availableNotes.find((n) => n.id === selectedNoteId);
 
-  // Submit query
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!input.trim() || isLoading) return;
+  // Progressive Typewriter Streaming Engine (ChatGPT-style)
+  const streamResponse = (
+    assistantMsgId: string,
+    fullText: string,
+    citations: any[] = [],
+    quizQuestions?: any[],
+    followUps?: string[]
+  ) => {
+    if (streamTimerRef.current) clearInterval(streamTimerRef.current);
 
-    const userText = input.trim();
-    setInput("");
+    setIsStreaming(true);
+    let currentIdx = 0;
+    // Chunk size calculated so full typing completes smoothly in ~1.2s to 2s
+    const totalChars = fullText.length;
+    const chunkSize = Math.max(3, Math.ceil(totalChars / 75));
+
+    streamTimerRef.current = setInterval(() => {
+      currentIdx = Math.min(currentIdx + chunkSize, totalChars);
+      const partialText = fullText.slice(0, currentIdx);
+
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === assistantMsgId
+            ? { ...m, content: partialText, isStreaming: true }
+            : m
+        )
+      );
+
+      if (currentIdx >= totalChars) {
+        if (streamTimerRef.current) clearInterval(streamTimerRef.current);
+        streamTimerRef.current = null;
+        setIsStreaming(false);
+
+        // Finalize message with complete citations and suggestions
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === assistantMsgId
+              ? {
+                  ...m,
+                  content: fullText,
+                  isStreaming: false,
+                  citations,
+                  quizQuestions,
+                  followUps,
+                }
+              : m
+          )
+        );
+      }
+    }, 18);
+  };
+
+  // Stop generating button handler
+  const handleStopStreaming = () => {
+    if (streamTimerRef.current) {
+      clearInterval(streamTimerRef.current);
+      streamTimerRef.current = null;
+    }
+    setIsStreaming(false);
+    setIsLoading(false);
+    setMessages((prev) =>
+      prev.map((m) => (m.isStreaming ? { ...m, isStreaming: false } : m))
+    );
+  };
+
+  // Submit query
+  const executeQuery = async (queryText: string) => {
+    if (!queryText.trim() || isLoading || isStreaming) return;
+
+    lastUserQueryRef.current = queryText;
+    const userMsgId = `user_${Date.now()}`;
+    const assistantMsgId = `assistant_${Date.now()}`;
 
     // Add user message
     const userMsg: AIMessage = {
-      id: `user_${Date.now()}`,
+      id: userMsgId,
       role: "user",
-      content: userText,
+      content: queryText,
       mode: selectedMode,
       citations: [],
       timestamp: new Date(),
     };
 
-    setMessages((prev) => [...prev, userMsg]);
+    // Add placeholder assistant message
+    const initialAssistantMsg: AIMessage = {
+      id: assistantMsgId,
+      role: "assistant",
+      content: "",
+      mode: selectedMode,
+      citations: [],
+      isStreaming: true,
+      timestamp: new Date(),
+    };
+
+    setMessages((prev) => [...prev, userMsg, initialAssistantMsg]);
     setIsLoading(true);
 
     try {
       const res = await askAssistantAction({
-        query: userText,
+        query: queryText,
         noteId: selectedNoteId,
         mode: selectedMode,
         history: messages.map((m) => ({ role: m.role, content: m.content })),
       });
 
+      setIsLoading(false);
+
       if (res.success && res.data) {
-        setMessages((prev) => [...prev, res.data!]);
+        streamResponse(
+          assistantMsgId,
+          res.data.content,
+          res.data.citations,
+          res.data.quizQuestions,
+          res.data.followUps
+        );
       } else {
-        const errorMsg: AIMessage = {
-          id: `err_${Date.now()}`,
-          role: "assistant",
-          content: `⚠️ ${res.message || "Failed to generate response. Please try again."}`,
-          mode: selectedMode,
-          citations: [],
-          timestamp: new Date(),
-        };
-        setMessages((prev) => [...prev, errorMsg]);
+        const errorContent = `⚠️ ${res.message || "Failed to generate response. Please try again."}`;
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === assistantMsgId
+              ? { ...m, content: errorContent, isStreaming: false }
+              : m
+          )
+        );
       }
     } catch {
-      const errorMsg: AIMessage = {
-        id: `err_${Date.now()}`,
-        role: "assistant",
-        content: "⚠️ An unexpected network error occurred while querying the study copilot.",
-        mode: selectedMode,
-        citations: [],
-        timestamp: new Date(),
-      };
-      setMessages((prev) => [...prev, errorMsg]);
-    } finally {
       setIsLoading(false);
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === assistantMsgId
+            ? {
+                ...m,
+                content: "⚠️ An unexpected network error occurred while querying the study copilot.",
+                isStreaming: false,
+              }
+            : m
+        )
+      );
     }
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!input.trim()) return;
+    const text = input.trim();
+    setInput("");
+    executeQuery(text);
   };
 
   // Quick Action: Generate Quiz for current note
   const handleQuickQuiz = async () => {
-    if (isLoading) return;
-    setIsLoading(true);
-
-    const userMsg: AIMessage = {
-      id: `user_quiz_${Date.now()}`,
-      role: "user",
-      content: `🎯 Generate an interactive practice quiz for "${currentNote ? currentNote.title : "my course materials"}"`,
-      mode: "QUIZ",
-      citations: [],
-      timestamp: new Date(),
-    };
-    setMessages((prev) => [...prev, userMsg]);
-
-    try {
-      const res = await generateQuizAction(selectedNoteId);
-      if (res.success && res.data) {
-        setMessages((prev) => [...prev, res.data!]);
-      }
-    } finally {
-      setIsLoading(false);
-    }
+    if (isLoading || isStreaming) return;
+    const prompt = `🎯 Generate an interactive practice quiz for "${currentNote ? currentNote.title : "my course materials"}"`;
+    executeQuery(prompt);
   };
 
   // Quick Action: Generate Summary for current note
   const handleQuickSummary = async () => {
-    if (isLoading) return;
-    setIsLoading(true);
+    if (isLoading || isStreaming) return;
+    const prompt = `📝 Create a revision summary and cheatsheet for "${currentNote ? currentNote.title : "my course materials"}"`;
+    executeQuery(prompt);
+  };
 
-    const userMsg: AIMessage = {
-      id: `user_summary_${Date.now()}`,
-      role: "user",
-      content: `📝 Create a revision summary and cheatsheet for "${currentNote ? currentNote.title : "my course materials"}"`,
-      mode: "SUMMARY",
-      citations: [],
-      timestamp: new Date(),
-    };
-    setMessages((prev) => [...prev, userMsg]);
+  // Handle clicking a follow-up suggestion chip
+  const handleSelectSuggestion = (suggestion: string) => {
+    setInput("");
+    executeQuery(suggestion);
+  };
 
-    try {
-      const res = await generateSummaryAction(selectedNoteId);
-      if (res.success && res.data) {
-        setMessages((prev) => [...prev, res.data!]);
-      }
-    } finally {
-      setIsLoading(false);
+  // Handle regenerating response
+  const handleRegenerate = () => {
+    if (lastUserQueryRef.current && !isLoading && !isStreaming) {
+      executeQuery(lastUserQueryRef.current);
     }
   };
 
   // Reset conversation
   const handleResetChat = () => {
+    if (streamTimerRef.current) clearInterval(streamTimerRef.current);
+    setIsStreaming(false);
+    setIsLoading(false);
     setMessages([
       {
         id: `welcome_${Date.now()}`,
         role: "assistant",
-        content: "New study session initiated! Select a document and ask a question to begin.",
+        content: "New study session initiated! Select a document and ask an academic question to begin.",
         mode: "EXPLAIN",
         citations: [],
         timestamp: new Date(),
@@ -209,11 +286,11 @@ Select a document from the context dropdown above or try one of the suggested pr
                 CampusFlow AI Copilot
               </h2>
               <Badge variant="purple" className="text-[10px] hidden sm:inline-flex">
-                RAG Engine v1.0
+                ChatGPT Stream
               </Badge>
             </div>
             <p className="text-xs text-zinc-500 flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" />
+              <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block animate-pulse" />
               Document Grounding Active
             </p>
           </div>
@@ -243,7 +320,7 @@ Select a document from the context dropdown above or try one of the suggested pr
             size="sm"
             variant="outline"
             onClick={handleQuickQuiz}
-            disabled={isLoading}
+            disabled={isLoading || isStreaming}
             className="h-9 text-xs border-indigo-200 dark:border-indigo-900/60 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 gap-1 hidden md:flex"
             title="Generate practice quiz from selected document"
           >
@@ -255,7 +332,7 @@ Select a document from the context dropdown above or try one of the suggested pr
             size="sm"
             variant="outline"
             onClick={handleQuickSummary}
-            disabled={isLoading}
+            disabled={isLoading || isStreaming}
             className="h-9 text-xs border-purple-200 dark:border-purple-900/60 text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-950/40 gap-1 hidden md:flex"
             title="Generate cheatsheet from selected document"
           >
@@ -278,21 +355,14 @@ Select a document from the context dropdown above or try one of the suggested pr
 
       {/* Center Chat Messages Stream */}
       <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-5">
-        {messages.map((msg) => (
-          <ChatMessageItem key={msg.id} message={msg} />
+        {messages.map((msg, idx) => (
+          <ChatMessageItem
+            key={msg.id || idx}
+            message={msg}
+            onSelectSuggestion={handleSelectSuggestion}
+            onRegenerate={idx === messages.length - 1 && msg.role === "assistant" ? handleRegenerate : undefined}
+          />
         ))}
-
-        {isLoading && (
-          <div className="flex gap-3.5 items-center animate-in fade-in">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-indigo-600 to-purple-600 text-white flex items-center justify-center shrink-0">
-              <Sparkles className="w-4 h-4 animate-spin" />
-            </div>
-            <div className="p-4 rounded-2xl rounded-tl-sm bg-zinc-50 dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 text-xs text-zinc-500 flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-indigo-500 animate-ping" />
-              <span>Analyzing document chunks & generating grounded response...</span>
-            </div>
-          </div>
-        )}
 
         <div ref={messagesEndRef} />
       </div>
@@ -311,6 +381,8 @@ Select a document from the context dropdown above or try one of the suggested pr
           onInputChange={setInput}
           onSubmit={handleSubmit}
           isLoading={isLoading}
+          isStreaming={isStreaming}
+          onStopStreaming={handleStopStreaming}
           selectedMode={selectedMode}
           onModeChange={setSelectedMode}
         />

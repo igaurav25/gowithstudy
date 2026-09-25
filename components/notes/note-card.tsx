@@ -18,7 +18,9 @@ import {
   BookOpen,
   ArrowUpRight,
   MoreVertical,
+  FileDown,
 } from "lucide-react";
+import { downloadNoteAsPDF } from "@/lib/pdf-generator";
 
 interface NoteCardProps {
   note: NoteItem;
@@ -180,6 +182,17 @@ export function NoteCard({
               <span>Ask AI</span>
             </Button>
           </Link>
+
+          {/* Download Clean PDF button */}
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => downloadNoteAsPDF(note)}
+            className="h-8 w-8 p-0 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/40"
+            title="Download clean formatted PDF"
+          >
+            <FileDown className="w-4 h-4" />
+          </Button>
 
           {/* Preview button */}
           <Button
@@ -347,6 +360,18 @@ export function NoteCard({
                 <span>Ask AI</span>
               </Button>
             </Link>
+
+            {/* Direct Clean PDF Download */}
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => downloadNoteAsPDF(note)}
+              className="h-8 text-xs px-2 gap-1 border-red-200 dark:border-red-900/60 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40"
+              title="Download clean formatted PDF"
+            >
+              <FileDown className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">PDF</span>
+            </Button>
 
             {/* Preview modal button */}
             <Button

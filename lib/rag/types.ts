@@ -36,6 +36,8 @@ export interface AIMessage {
   citations: Citation[];
   quizQuestions?: QuizQuestion[];
   isOutOfScope?: boolean;
+  isStreaming?: boolean;
+  followUps?: string[];
   timestamp: Date | string;
 }
 

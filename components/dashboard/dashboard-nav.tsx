@@ -12,6 +12,7 @@ import {
   User,
   LayoutDashboard,
   FileText,
+  BookOpen,
   Calendar,
   CheckSquare,
   Sparkles,
@@ -35,6 +36,7 @@ export function DashboardNav({
   const navLinks = [
     { label: "Overview", href: "/dashboard", icon: LayoutDashboard },
     { label: "Notes", href: "/dashboard/notes", icon: FileText },
+    { label: "Syllabus", href: "/dashboard/syllabus", icon: BookOpen },
     { label: "Timetable", href: "/dashboard/timetable", icon: Calendar },
     { label: "Assignments", href: "/dashboard/assignments", icon: CheckSquare },
     { label: "AI Copilot", href: "/dashboard/ai", icon: Sparkles },

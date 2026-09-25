@@ -223,7 +223,30 @@ ${contextPrompt}`;
   ): string {
     const q = query.toLowerCase();
 
-    // Specific CSE Topic Deep Dives
+    // 1. Operating Systems: CPU Scheduling & Process Management
+    if (q.includes("schedul") || q.includes("round robin") || q.includes("fcfs") || q.includes("sjf") || q.includes("process")) {
+      return `### ⚡ CPU Scheduling Algorithms — Master Exam Notes
+
+**Core Purpose:**
+CPU scheduling selects a process from the Ready Queue to execute on the CPU core, balancing throughput, response time, and turnaround time.
+
+#### 1. Fundamental Performance Formulas:
+* **Turnaround Time (TAT)** = $\\text{Completion Time (CT)} - \\text{Arrival Time (AT)}$
+* **Waiting Time (WT)** = $\\text{Turnaround Time (TAT)} - \\text{Burst Time (BT)}$
+* **Response Time (RT)** = Time elapsed from arrival to the first time CPU is allocated.
+
+#### 2. Comparison of Standard Algorithms:
+| Algorithm | Type | Advantages | Disadvantages |
+|---|---|---|---|
+| **FCFS** | Non-preemptive | Simple, fair ordering | Suffers from **Convoy Effect** (short jobs wait behind long jobs) |
+| **SJF / SRTF** | Preemptive/Non-preemptive | Provably optimal for minimum average WT | Requires knowing future burst times; starves long jobs |
+| **Round Robin (RR)** | Preemptive (Time Quantum $q$) | Optimal for time-sharing & interactive response | High context-switching overhead if $q$ is too small |
+| **Priority Scheduling** | Both | Critical tasks run first | Indefinite blocking (solved by **Aging**) |
+
+> 🎓 **Exam Tip:** In university numerical problems, always draw the **Gantt Chart** first, record Completion Time (CT) for each process, and then compute TAT and WT column by column.`;
+    }
+
+    // 2. Deadlock & Banker's Algorithm
     if (q.includes("banker") || q.includes("deadlock")) {
       return `### 🔒 Deadlock Avoidance: Dijkstra's Banker's Algorithm
 
@@ -245,53 +268,110 @@ A system avoids deadlocks by ensuring it always stays in a **Safe State**—mean
 > 📌 **Key Takeaway:** If a resource request puts the system into an *Unsafe State*, the OS makes the process wait, even if resources are currently available!`;
     }
 
-    if (q.includes("2pl") || q.includes("two phase") || q.includes("locking")) {
-      return `### 🗄️ Two-Phase Locking (2PL) vs Strict 2PL
+    // 3. DBMS: Normalization & Keys
+    if (q.includes("normaliz") || q.includes("bcnf") || q.includes("3nf") || q.includes("2nf") || q.includes("functional dependency")) {
+      return `### 🗄️ Relational Database Normalization (1NF to BCNF)
 
-**Why 2PL?**
-2PL is a concurrency control protocol that mathematically guarantees **Conflict Serializability** by dividing lock operations into two distinct monotonic phases.
+**Goal:** Eliminate data redundancy, insertion anomalies, deletion anomalies, and update anomalies.
 
-| Metric | Basic 2PL | Strict 2PL (S2PL) | Rigorous 2PL |
-|---|---|---|---|
-| **Growing Phase** | May acquire locks; no locks released | May acquire locks; no locks released | May acquire locks |
-| **Shrinking Phase** | May release locks; no new locks acquired | Shared locks can be released; Exclusive locks held until commit | All locks held until commit |
-| **Cascading Rollback** | ❌ Vulnerable to cascading aborts | ✅ Eliminates cascading aborts | ✅ Eliminates cascading aborts |
-| **Concurrency Level** | Higher concurrency | Moderate concurrency | Lower concurrency |
+#### 1. Normal Forms Step-by-Step:
+1. **1NF (First Normal Form):** All attribute domains contain only atomic, indivisible values. No multi-valued or composite columns.
+2. **2NF (Second Normal Form):** Must be in 1NF, and **NO non-prime attribute is partially dependent on any candidate key**. (Applies when candidate keys are composite).
+3. **3NF (Third Normal Form):** Must be in 2NF, and for every non-trivial dependency $X \\to Y$:
+   - Either $X$ is a **Super Key**, OR
+   - $Y$ is a **Prime Attribute** (part of a candidate key).
+4. **BCNF (Boyce-Codd Normal Form):** Strictly requires that for every non-trivial dependency $X \\to Y$, **$X$ MUST be a Super Key**.
 
-**Formal Rule for Strict 2PL:**
-A transaction must hold all its **Exclusive (X)** locks until the transaction explicitly commits or aborts. If transaction $T_1$ writes to item $A$ and aborts, no other transaction has read uncommitted data, preventing catastrophic cascading rollbacks.`;
+#### 2. Lossless Join vs Dependency Preservation:
+* Decomposition into 3NF is always **Lossless** and **Dependency-Preserving**.
+* Decomposition into BCNF is always **Lossless**, but may NOT always preserve all functional dependencies.`;
     }
 
-    if (q.includes("knapsack") || q.includes("dp") || q.includes("dynamic programming")) {
-      return `### 🎒 0/1 Knapsack Problem — Dynamic Programming Blueprint
+    // 4. DBMS: Transactions & 2PL
+    if (q.includes("2pl") || q.includes("two phase") || q.includes("acid") || q.includes("transaction")) {
+      return `### 🗄️ Transaction Management & Two-Phase Locking (2PL)
 
-**Problem Definition:**
-Given $N$ items with weights $wt[]$ and values $val[]$, maximize the total value that fits inside a knapsack with maximum capacity $W$. Each item can either be included once ($1$) or excluded ($0$).
+**ACID Properties:**
+* **Atomicity:** All-or-nothing execution (managed by Write-Ahead Logging / WAL).
+* **Consistency:** Preserves database invariants and foreign key constraints.
+* **Isolation:** Concurrent transactions execute without mutual interference.
+* **Durability:** Committed updates survive crashes and power failures.
 
-#### 1. Optimal Substructure & Recurrence:
-$$\\text{dp}[i][w] = \\begin{cases} \\max\\big(\\text{dp}[i-1][w], \\; val[i-1] + \\text{dp}[i-1][w - wt[i-1]]\\big) & \\text{if } wt[i-1] \\le w \\\\[6pt] \\text{dp}[i-1][w] & \\text{otherwise} \\end{cases}$$
+#### Two-Phase Locking (2PL) Protocol:
+1. **Growing Phase:** A transaction may acquire locks (Shared or Exclusive), but cannot release any lock.
+2. **Shrinking Phase:** A transaction may release locks, but cannot acquire any new lock.
 
-#### 2. Complexity Analysis:
-* **Time Complexity:** $\\mathcal{O}(N \\times W)$ (pseudo-polynomial time).
-* **Space Complexity:** $\\mathcal{O}(N \\times W)$ using 2D table, optimizable to $\\mathcal{O}(W)$ using a 1D array traversed in reverse from $W$ down to $wt[i-1]$.`;
+**Strict 2PL:**
+All **Exclusive (Write)** locks held by a transaction must be retained until the transaction explicitly commits or aborts, eliminating cascading rollbacks.`;
     }
 
-    if (q.includes("cidr") || q.includes("subnet") || q.includes("ip")) {
-      return `### 🌐 CIDR Subnetting Calculations Handbook
+    // 5. Computer Networks: OSI & TCP Handshake
+    if (q.includes("osi") || q.includes("handshake") || q.includes("tcp") || q.includes("udp") || q.includes("network")) {
+      return `### 🌐 Computer Networks — Protocol Stack & TCP Handshake
 
-**Notation:** \`IP /n\` where $n$ is the prefix length (network bits), leaving $32 - n$ host bits.
+#### 1. OSI 7-Layer Hierarchy:
+1. **Application Layer (L7):** HTTP, DNS, SMTP, FTP (User interface protocols).
+2. **Presentation Layer (L6):** TLS/SSL, JSON/ASCII encoding, data compression.
+3. **Session Layer (L5):** Sockets, session tokens, dialog synchronization.
+4. **Transport Layer (L4):** TCP (reliable, connection-oriented) & UDP (low-latency datagrams). Data unit = **Segment**.
+5. **Network Layer (L3):** IPv4, IPv6, ICMP, Routing (Dijkstra, BGP). Data unit = **Packet**.
+6. **Data Link Layer (L2):** Ethernet (802.3), Wi-Fi (802.11), MAC addressing, ARP, framing. Data unit = **Frame**.
+7. **Physical Layer (L1):** Fiber optics, twisted pair, radio waves. Data unit = **Bits**.
 
-#### Step-by-Step Subnetting Example (\`192.168.10.0/26\`):
-1. **Network Bits ($n$):** 26 bits
-2. **Host Bits ($h$):** $32 - 26 = 6$ bits
-3. **Subnet Mask:** $255.255.255.192$ (Binary: \`11111111.11111111.11111111.11000000\`)
-4. **Total IPs per Subnet:** $2^6 = 64$
-5. **Usable Hosts:** $2^6 - 2 = 62$ hosts (subtracting Network ID and Direct Broadcast)
-6. **Subnet Blocks:**
-   * **Subnet 1:** \`192.168.10.0\` to \`192.168.10.63\` (Usable: \`.1\` to \`.62\`)
-   * **Subnet 2:** \`192.168.10.64\` to \`192.168.10.127\` (Usable: \`.65\` to \`.126\`)
-   * **Subnet 3:** \`192.168.10.128\` to \`192.168.10.191\` (Usable: \`.129\` to \`.190\`)
-   * **Subnet 4:** \`192.168.10.192\` to \`192.168.10.255\` (Usable: \`.193\` to \`.254\`)`;
+#### 2. TCP 3-Way Handshake:
+* **Step 1 (Client $\\to$ Server):** \`SYN=1, Seq=X\` (Proposes initial sequence number).
+* **Step 2 (Server $\\to$ Client):** \`SYN=1, ACK=1, Seq=Y, Ack=X+1\` (Acknowledges client and provides server seq).
+* **Step 3 (Client $\\to$ Server):** \`ACK=1, Seq=X+1, Ack=Y+1\` (Connection established; data transmission begins).`;
+    }
+
+    // 6. DSA & Dynamic Programming
+    if (q.includes("knapsack") || q.includes("dp") || q.includes("dynamic programming") || q.includes("dsa") || q.includes("algorithm")) {
+      return `### 🎒 Dynamic Programming & Algorithm Masterclass
+
+**Principle of Optimality:**
+An optimal solution to any instance of an optimization problem contains optimal solutions to its subproblems.
+
+#### 1. 0/1 Knapsack Blueprint:
+Given weights $wt[]$ and values $val[]$, maximize total value within capacity $W$.
+$$dp[i][w] = \\max\\big(dp[i-1][w], \\; val[i-1] + dp[i-1][w - wt[i-1]]\\big)$$
+* **Time Complexity:** $\\mathcal{O}(N \\times W)$ (pseudo-polynomial).
+* **Space Complexity:** $\\mathcal{O}(W)$ optimized 1D array traversed backwards.
+
+#### 2. Longest Common Subsequence (LCS):
+For strings $S_1$ and $S_2$:
+* If characters match ($S_1[i-1] == S_2[j-1]$): $dp[i][j] = 1 + dp[i-1][j-1]$
+* Else: $dp[i][j] = \\max(dp[i-1][j], dp[i][j-1])$`;
+    }
+
+    // 7. Object-Oriented Programming (OOP) & SOLID
+    if (q.includes("solid") || q.includes("oop") || q.includes("polymorphism") || q.includes("inheritance") || q.includes("encapsulation")) {
+      return `### ☕ Object-Oriented Programming & SOLID Principles
+
+#### 1. The 4 Pillars of OOP:
+1. **Encapsulation:** Bundling data and methods into a single unit (class) while restricting direct access via private fields and getters/setters.
+2. **Abstraction:** Hiding complex implementation details and exposing only the essential interface (using abstract classes and interfaces).
+3. **Inheritance:** Deriving new classes from existing classes to achieve code reusability (IS-A relationship).
+4. **Polymorphism:** Ability of objects to take on different forms (Compile-time via Method Overloading vs Runtime via Method Overriding with Virtual Tables).
+
+#### 2. The 5 SOLID Principles:
+* **S (Single Responsibility):** A class should have only one reason to change.
+* **O (Open/Closed):** Open for extension, closed for modification.
+* **L (Liskov Substitution):** Subtypes must be substitutable for their base types.
+* **I (Interface Segregation):** Small, focused interfaces rather than one fat interface.
+* **D (Dependency Inversion):** Depend on abstractions, not concrete implementations.`;
+    }
+
+    // 8. Syllabus & Exam Preparation
+    if (q.includes("syllabus") || q.includes("curriculum") || q.includes("exam") || q.includes("subject")) {
+      return `### 🎓 B.Tech Computer Science Syllabus & Curriculum Overview
+
+CampusFlow integrates the complete accredited curriculum:
+* **Operating Systems (CS301):** Process scheduling, Semaphores, Deadlocks, Paging, Virtual Memory, File Systems.
+* **Database Management Systems (CS302):** ER Modeling, Relational Algebra, SQL, Normalization (1NF to BCNF), Transactions & ACID, Indexing.
+* **Computer Networks (CS303):** OSI & TCP/IP models, IPv4 Subnetting, Routing algorithms, TCP congestion control, DNS, HTTP/3.
+* **Design & Analysis of Algorithms (CS304):** Asymptotic analysis, Divide & Conquer, Greedy method, Dynamic Programming, NP-Completeness.
+
+> 💡 **Quick Navigation:** Open **Syllabus** in the top navigation bar to explore unit-by-unit breakdowns and download course outlines.`;
     }
 
     // Default synthesis from retrieved chunks
@@ -312,8 +392,8 @@ ${topChunk.content}
 To answer your question regarding **"${query}"**:
 
 1. **Definition:** This is a fundamental concept in Computer Science.
-2. **Core Operation:** It ensures optimal efficiency and resource guarantees.
-3. **Key Advice:** Review the lecture slides and practice implementing the logic step-by-step.`;
+2. **Core Operation:** It ensures optimal efficiency, deterministic correctness, and resource guarantees.
+3. **Academic Guidance:** Open the **Syllabus** or **Notes** module from the top navigation to read the full chapter text and download reference materials!`;
   }
 
   /**

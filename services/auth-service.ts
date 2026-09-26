@@ -1,7 +1,11 @@
 import { hashPassword, comparePassword } from "@/lib/auth";
 import { Role } from "@/lib/rbac";
 import { SignupInput, LoginInput } from "@/schemas/auth";
+import { prisma } from "@/lib/prisma";
+import { isDbConnected } from "@/lib/db-check";
 import crypto from "crypto";
+import fs from "fs";
+import path from "path";
 
 export interface StoredUser {
   id: string;
@@ -38,16 +42,68 @@ export interface ActiveSession {
   createdAt: Date;
 }
 
-// In-memory persistent state across requests in current process (prepares cleanly for Prisma in Phase 4)
+// Persistent state across requests, reloads, mobile & desktop sessions
 class AuthStore {
   public users: Map<string, StoredUser> = new Map();
   public verificationTokens: Map<string, VerificationToken> = new Map();
   public resetTokens: Map<string, PasswordResetToken> = new Map();
   public sessions: Map<string, ActiveSession> = new Map();
   private initialized = false;
+  private diskFilePath = path.join(process.cwd(), ".data", "auth-users.json");
 
   constructor() {
     this.initDefaultUsers();
+  }
+
+  private loadUsersFromDisk(): void {
+    try {
+      if (fs.existsSync(this.diskFilePath)) {
+        const raw = fs.readFileSync(this.diskFilePath, "utf8");
+        const list = JSON.parse(raw) as StoredUser[];
+        if (Array.isArray(list)) {
+          for (const u of list) {
+            this.users.set(u.email.toLowerCase(), {
+              ...u,
+              createdAt: new Date(u.createdAt),
+            });
+          }
+        }
+      }
+    } catch (e) {
+      console.warn("Failed to load users from persistent disk store:", e);
+    }
+  }
+
+  public saveUsersToDisk(): void {
+    try {
+      const dir = path.dirname(this.diskFilePath);
+      if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+      }
+      const list = Array.from(this.users.values());
+      fs.writeFileSync(this.diskFilePath, JSON.stringify(list, null, 2), "utf8");
+    } catch (e) {
+      console.warn("Failed to persist users to disk store:", e);
+    }
+  }
+
+  public loadUserFromDisk(email: string): StoredUser | null {
+    try {
+      if (fs.existsSync(this.diskFilePath)) {
+        const raw = fs.readFileSync(this.diskFilePath, "utf8");
+        const list = JSON.parse(raw) as StoredUser[];
+        const found = list.find((u) => u.email.toLowerCase() === email.toLowerCase());
+        if (found) {
+          return {
+            ...found,
+            createdAt: new Date(found.createdAt),
+          };
+        }
+      }
+    } catch {
+      // fallback silently
+    }
+    return null;
   }
 
   private async initDefaultUsers() {
@@ -104,6 +160,9 @@ class AuthStore {
     for (const u of defaultUsers) {
       this.users.set(u.email.toLowerCase(), u);
     }
+
+    // Load any previously registered student accounts (Gmail, college accounts)
+    this.loadUsersFromDisk();
   }
 }
 
@@ -116,10 +175,10 @@ const store = globalStore.__authStore;
 
 export const AuthService = {
   /**
-   * Registers a new student account.
+   * Registers a new student account and persists across server reloads and devices.
    */
   async signup(input: SignupInput): Promise<{ user: StoredUser; verificationToken: string }> {
-    const existing = store.users.get(input.email.toLowerCase());
+    const existing = await this.getUserByEmail(input.email);
     if (existing) {
       throw new Error("An account with this email address already exists.");
     }
@@ -143,6 +202,34 @@ export const AuthService = {
     };
 
     store.users.set(newUser.email, newUser);
+    store.saveUsersToDisk();
+
+    // Persist to database if connected
+    try {
+      if (await isDbConnected()) {
+        await prisma.user.create({
+          data: {
+            id: newUser.id,
+            email: newUser.email,
+            passwordHash: newUser.passwordHash,
+            role: newUser.role,
+            emailVerified: false,
+            profile: {
+              create: {
+                name: newUser.name,
+                college: newUser.college,
+                course: newUser.course,
+                branch: newUser.branch,
+                year: newUser.year,
+                semester: newUser.semester,
+              },
+            },
+          },
+        });
+      }
+    } catch (dbErr) {
+      console.warn("Prisma user signup sync fallback:", dbErr);
+    }
 
     // Create verification token (valid for 24 hours)
     const token = crypto.randomBytes(32).toString("hex");
@@ -156,10 +243,100 @@ export const AuthService = {
   },
 
   /**
+   * Authenticates or auto-provisions a student via Google / Gmail.
+   * Ensures that once someone signs in with Gmail, their account and session remain permanently saved,
+   * so they never need to repeatedly fill out the signup/registration form again.
+   */
+  async googleAuth(input: {
+    email: string;
+    name?: string;
+    avatarUrl?: string;
+  }): Promise<{ user: StoredUser; sessionId: string; isNewUser: boolean }> {
+    const email = input.email.toLowerCase().trim();
+    if (!email || !email.includes("@")) {
+      throw new Error("A valid email or Gmail address is required.");
+    }
+
+    let user = await this.getUserByEmail(email);
+    let isNewUser = false;
+
+    if (!user) {
+      isNewUser = true;
+      const defaultPasswordHash = await hashPassword(crypto.randomBytes(16).toString("hex"));
+      const userId = `usr_${crypto.randomBytes(8).toString("hex")}`;
+
+      const derivedName =
+        input.name?.trim() ||
+        email
+          .split("@")[0]
+          .replace(/[._]/g, " ")
+          .replace(/\b\w/g, (c) => c.toUpperCase());
+
+      user = {
+        id: userId,
+        name: derivedName,
+        email,
+        passwordHash: defaultPasswordHash,
+        role: "USER",
+        college: "CampusFlow University",
+        course: "B.Tech",
+        branch: "Computer Science & Engineering",
+        year: 1,
+        semester: 1,
+        emailVerified: true,
+        avatarUrl:
+          input.avatarUrl ||
+          `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(derivedName)}`,
+        createdAt: new Date(),
+      };
+
+      store.users.set(email, user);
+      store.saveUsersToDisk();
+
+      // Database sync
+      try {
+        if (await isDbConnected()) {
+          await prisma.user.create({
+            data: {
+              id: user.id,
+              email: user.email,
+              passwordHash: user.passwordHash,
+              role: user.role,
+              emailVerified: true,
+              profile: {
+                create: {
+                  name: user.name,
+                  avatarUrl: user.avatarUrl,
+                  college: user.college,
+                  course: user.course,
+                  branch: user.branch,
+                  year: user.year,
+                  semester: user.semester,
+                },
+              },
+            },
+          });
+        }
+      } catch (dbErr) {
+        console.warn("Prisma googleAuth user sync fallback:", dbErr);
+      }
+    }
+
+    const sessionId = `ses_${crypto.randomBytes(16).toString("hex")}`;
+    store.sessions.set(sessionId, {
+      id: sessionId,
+      userId: user.id,
+      createdAt: new Date(),
+    });
+
+    return { user, sessionId, isNewUser };
+  },
+
+  /**
    * Authenticates user with credentials and creates a session.
    */
   async login(input: LoginInput): Promise<{ user: StoredUser; sessionId: string }> {
-    const user = store.users.get(input.email.toLowerCase());
+    const user = await this.getUserByEmail(input.email);
     if (!user) {
       throw new Error("Invalid email or password.");
     }
@@ -193,14 +370,26 @@ export const AuthService = {
       throw new Error("Verification token has expired. Please request a new link.");
     }
 
-    const user = store.users.get(record.email);
+    const user = await this.getUserByEmail(record.email);
     if (!user) {
       throw new Error("Associated user account not found.");
     }
 
     user.emailVerified = true;
     store.users.set(user.email, user);
+    store.saveUsersToDisk();
     store.verificationTokens.delete(token); // Single-use
+
+    try {
+      if (await isDbConnected()) {
+        await prisma.user.updateMany({
+          where: { email: user.email },
+          data: { emailVerified: true },
+        });
+      }
+    } catch {
+      // fallback silently
+    }
 
     return user;
   },
@@ -210,7 +399,7 @@ export const AuthService = {
    */
   async requestPasswordReset(email: string): Promise<{ token?: string }> {
     const normalized = email.toLowerCase().trim();
-    const user = store.users.get(normalized);
+    const user = await this.getUserByEmail(normalized);
 
     // Always succeed publicly to prevent email enumeration
     if (!user) {
@@ -241,14 +430,26 @@ export const AuthService = {
       throw new Error("Reset token has expired. Please submit a new request.");
     }
 
-    const user = store.users.get(record.email);
+    const user = await this.getUserByEmail(record.email);
     if (!user) {
       throw new Error("User not found.");
     }
 
     user.passwordHash = await hashPassword(newPassword);
     store.users.set(user.email, user);
+    store.saveUsersToDisk();
     store.resetTokens.delete(token); // Invalidate token
+
+    try {
+      if (await isDbConnected()) {
+        await prisma.user.updateMany({
+          where: { email: user.email },
+          data: { passwordHash: user.passwordHash },
+        });
+      }
+    } catch {
+      // fallback silently
+    }
 
     // Invalidate existing sessions for security
     await this.logoutAllDevices(user.id);
@@ -273,19 +474,98 @@ export const AuthService = {
   },
 
   /**
-   * Fetches user by ID.
+   * Fetches user by ID, checking memory cache, persistent disk storage, and PostgreSQL.
    */
   async getUserById(userId: string): Promise<StoredUser | null> {
+    // 1. Check in-memory map
     for (const user of store.users.values()) {
       if (user.id === userId) return user;
     }
+
+    // 2. Check Database if connected
+    try {
+      if (await isDbConnected()) {
+        const dbUser = await prisma.user.findUnique({
+          where: { id: userId },
+          include: { profile: true },
+        });
+        if (dbUser) {
+          const user: StoredUser = {
+            id: dbUser.id,
+            name: dbUser.profile?.name || dbUser.email.split("@")[0],
+            email: dbUser.email,
+            passwordHash: dbUser.passwordHash,
+            role: dbUser.role as Role,
+            college: dbUser.profile?.college || "CampusFlow University",
+            course: dbUser.profile?.course || "B.Tech",
+            branch: dbUser.profile?.branch || "Computer Science & Engineering",
+            year: dbUser.profile?.year || 1,
+            semester: dbUser.profile?.semester || 1,
+            emailVerified: dbUser.emailVerified,
+            avatarUrl: dbUser.profile?.avatarUrl ?? undefined,
+            createdAt: dbUser.createdAt,
+          };
+          store.users.set(user.email.toLowerCase(), user);
+          store.saveUsersToDisk();
+          return user;
+        }
+      }
+    } catch (e) {
+      console.warn("DB user lookup error:", e);
+    }
+
     return null;
   },
 
   /**
-   * Fetches user by Email.
+   * Fetches user by Email, checking memory cache, persistent disk storage, and PostgreSQL.
    */
   async getUserByEmail(email: string): Promise<StoredUser | null> {
-    return store.users.get(email.toLowerCase().trim()) || null;
+    const normalized = email.toLowerCase().trim();
+
+    // 1. Check in-memory map
+    const cached = store.users.get(normalized);
+    if (cached) return cached;
+
+    // 2. Check persistent disk file (survives dev server reloads)
+    const diskUser = store.loadUserFromDisk(normalized);
+    if (diskUser) {
+      store.users.set(normalized, diskUser);
+      return diskUser;
+    }
+
+    // 3. Check Database if connected
+    try {
+      if (await isDbConnected()) {
+        const dbUser = await prisma.user.findUnique({
+          where: { email: normalized },
+          include: { profile: true },
+        });
+        if (dbUser) {
+          const user: StoredUser = {
+            id: dbUser.id,
+            name: dbUser.profile?.name || dbUser.email.split("@")[0],
+            email: dbUser.email,
+            passwordHash: dbUser.passwordHash,
+            role: dbUser.role as Role,
+            college: dbUser.profile?.college || "CampusFlow University",
+            course: dbUser.profile?.course || "B.Tech",
+            branch: dbUser.profile?.branch || "Computer Science & Engineering",
+            year: dbUser.profile?.year || 1,
+            semester: dbUser.profile?.semester || 1,
+            emailVerified: dbUser.emailVerified,
+            avatarUrl: dbUser.profile?.avatarUrl ?? undefined,
+            createdAt: dbUser.createdAt,
+          };
+          store.users.set(normalized, user);
+          store.saveUsersToDisk();
+          return user;
+        }
+      }
+    } catch (e) {
+      console.warn("DB user lookup error:", e);
+    }
+
+    return null;
   },
 };

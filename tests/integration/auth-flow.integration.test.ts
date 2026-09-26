@@ -121,4 +121,30 @@ describe("Integration: Full Authentication & Account Security Lifecycle", () => 
       await AuthService.logoutAllDevices(user.id);
     }
   });
+
+  it("Step 8: Should allow persistent Gmail sign-in without manual signup form", async () => {
+    const studentGmail = `student_mobile_${Date.now()}@gmail.com`;
+
+    // 1. Initial Google Sign-in from Desktop
+    const desktopAuth = await AuthService.googleAuth({
+      email: studentGmail,
+      name: "Tanya Sharma",
+    });
+    expect(desktopAuth.isNewUser).toBe(true);
+    expect(desktopAuth.user.email).toBe(studentGmail);
+    expect(desktopAuth.user.role).toBe("USER");
+
+    // 2. Later sign-in from Mobile - account is preserved, no repeat signup needed
+    const mobileAuth = await AuthService.googleAuth({
+      email: studentGmail,
+    });
+    expect(mobileAuth.isNewUser).toBe(false);
+    expect(mobileAuth.user.id).toBe(desktopAuth.user.id);
+    expect(mobileAuth.user.name).toBe("Tanya Sharma");
+
+    // 3. User can also be fetched by email directly
+    const savedUser = await AuthService.getUserByEmail(studentGmail);
+    expect(savedUser).not.toBeNull();
+    expect(savedUser?.id).toBe(desktopAuth.user.id);
+  });
 });

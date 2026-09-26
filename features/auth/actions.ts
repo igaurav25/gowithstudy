@@ -57,20 +57,23 @@ export async function signupAction(
   try {
     const { user, verificationToken } = await AuthService.signup(validation.data);
 
-    // Automatically create session for smooth onboarding
-    const sessionToken = await createSessionToken({
-      userId: user.id,
-      email: user.email,
-      name: user.name,
-      role: user.role,
-      college: user.college,
-      course: user.course,
-      branch: user.branch,
-      semester: user.semester,
-      sessionId: `ses_${Date.now()}`,
-    });
+    // Automatically create session for smooth onboarding with 60-day longevity
+    const sessionToken = await createSessionToken(
+      {
+        userId: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        college: user.college,
+        course: user.course,
+        branch: user.branch,
+        semester: user.semester,
+        sessionId: `ses_${Date.now()}`,
+      },
+      SESSION_DURATION_REMEMBER
+    );
 
-    await setSessionCookie(sessionToken);
+    await setSessionCookie(sessionToken, SESSION_DURATION_REMEMBER);
 
     return {
       success: true,
@@ -86,7 +89,7 @@ export async function signupAction(
 }
 
 /**
- * Handles student/admin login.
+ * Handles student/admin login with persistent cross-device cookies.
  */
 export async function loginAction(
   prevState: unknown,
@@ -95,7 +98,7 @@ export async function loginAction(
   const rawData = {
     email: formData.get("email"),
     password: formData.get("password"),
-    rememberMe: formData.get("rememberMe") === "on",
+    rememberMe: formData.get("rememberMe") === "on" || formData.get("rememberMe") === "true",
   };
 
   const validation = loginSchema.safeParse(rawData);
@@ -136,6 +139,64 @@ export async function loginAction(
     return {
       success: false,
       message: error instanceof Error ? error.message : "Login failed.",
+    };
+  }
+}
+
+/**
+ * Handles seamless Google / Gmail login and auto-registration.
+ * Once a student signs in with Gmail on desktop or mobile, their session is permanently saved.
+ */
+export async function googleSignInAction(params: {
+  email: string;
+  name?: string;
+  avatarUrl?: string;
+}): Promise<ActionResult<{ email: string; name: string; redirectUrl: string }>> {
+  try {
+    const email = params.email.trim().toLowerCase();
+    if (!email || !email.includes("@")) {
+      return { success: false, message: "Please provide a valid Gmail address." };
+    }
+
+    const { user, sessionId, isNewUser } = await AuthService.googleAuth({
+      email,
+      name: params.name,
+      avatarUrl: params.avatarUrl,
+    });
+
+    const duration = SESSION_DURATION_REMEMBER; // 60 days
+    const sessionToken = await createSessionToken(
+      {
+        userId: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        college: user.college,
+        course: user.course,
+        branch: user.branch,
+        semester: user.semester,
+        sessionId,
+      },
+      duration
+    );
+
+    await setSessionCookie(sessionToken, duration);
+
+    return {
+      success: true,
+      message: isNewUser
+        ? `Welcome to GoWithStudy, ${user.name}! Your account has been prepared.`
+        : `Welcome back, ${user.name}! Redirecting to dashboard...`,
+      data: {
+        email: user.email,
+        name: user.name,
+        redirectUrl: "/dashboard",
+      },
+    };
+  } catch (error: unknown) {
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : "Google authentication failed.",
     };
   }
 }

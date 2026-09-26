@@ -8,7 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { GraduationCap, ArrowRight, CheckCircle2, ShieldCheck, Mail } from "lucide-react";
+import { GoogleSignInButton } from "@/components/auth/google-sign-in-button";
+import { GraduationCap, ArrowRight, CheckCircle2, Mail } from "lucide-react";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -97,12 +98,28 @@ export default function SignupPage() {
                 </div>
               </div>
             ) : (
-              <form onSubmit={handleSubmit} className="space-y-5">
-                {result?.message && !result.success && (
-                  <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 text-sm font-medium">
-                    {result.message}
+              <div className="space-y-5">
+                {/* 1-Click Fast Google / Gmail Registration */}
+                <div className="space-y-3">
+                  <GoogleSignInButton label="Sign Up Instantly with Google / Gmail" />
+                  <div className="relative my-4">
+                    <div className="absolute inset-0 flex items-center">
+                      <span className="w-full border-t border-zinc-200 dark:border-zinc-800" />
+                    </div>
+                    <div className="relative flex justify-center text-xs uppercase">
+                      <span className="bg-white dark:bg-zinc-950 px-2 text-zinc-400 font-medium">
+                        or fill out manual registration
+                      </span>
+                    </div>
                   </div>
-                )}
+                </div>
+
+                <form onSubmit={handleSubmit} className="space-y-5">
+                  {result?.message && !result.success && (
+                    <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 text-sm font-medium">
+                      {result.message}
+                    </div>
+                  )}
 
                 {/* Name & Email */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -256,7 +273,8 @@ export default function SignupPage() {
                   <ArrowRight className="w-4 h-4 ml-1.5" />
                 </Button>
               </form>
-            )}
+            </div>
+          )}
 
             <div className="mt-6 pt-5 border-t border-zinc-200 dark:border-zinc-800 text-center text-xs text-zinc-500">
               Already have an account?{" "}

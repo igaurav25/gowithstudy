@@ -7,9 +7,9 @@ const AUTH_SECRET = process.env.AUTH_SECRET || "campusflow-super-secure-dev-sess
 const SECRET_KEY = new TextEncoder().encode(AUTH_SECRET);
 const COOKIE_NAME = process.env.SESSION_COOKIE_NAME || "campusflow_session";
 
-// 7 days default, 30 days if remember me is true
-export const SESSION_DURATION_DEFAULT = 7 * 24 * 60 * 60; // 7 days in seconds
-export const SESSION_DURATION_REMEMBER = 30 * 24 * 60 * 60; // 30 days in seconds
+// 30 days default, 60 days if remember me is true (ensures mobile & desktop persistence)
+export const SESSION_DURATION_DEFAULT = 30 * 24 * 60 * 60; // 30 days in seconds
+export const SESSION_DURATION_REMEMBER = 60 * 24 * 60 * 60; // 60 days in seconds
 
 /**
  * Hashes a plaintext password using bcrypt with salt rounds = 10.
@@ -61,15 +61,18 @@ export async function verifySessionToken(
 
 /**
  * Sets an HttpOnly, secure, SameSite session cookie.
+ * Configured so that mobile browsers and desktop browsers maintain persistent authentication.
  */
 export async function setSessionCookie(
   token: string,
   durationSeconds: number = SESSION_DURATION_DEFAULT
 ): Promise<void> {
   const cookieStore = await cookies();
+  const isHttps = process.env.NEXT_PUBLIC_APP_URL?.startsWith("https://") ?? false;
   cookieStore.set(COOKIE_NAME, token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    // Enforce secure flag in production HTTPS, allow local development testing from mobile Wi-Fi
+    secure: process.env.NODE_ENV === "production" && isHttps,
     sameSite: "lax",
     path: "/",
     maxAge: durationSeconds,

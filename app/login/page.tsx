@@ -8,22 +8,41 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { GraduationCap, ArrowRight, Lock, Sparkles, User, ShieldCheck } from "lucide-react";
+import { GoogleSignInButton } from "@/components/auth/google-sign-in-button";
+import { GraduationCap, ArrowRight, Sparkles, User, ShieldCheck } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
   const [isPending, startTransition] = React.useTransition();
   const [result, setResult] = React.useState<ActionResult | null>(null);
-  const [email, setEmail] = React.useState("");
+  const [email, setEmail] = React.useState<string>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const stored = localStorage.getItem("campusflow_last_email");
+        if (stored && stored.includes("@")) return stored;
+      } catch {
+        // ignore
+      }
+    }
+    return "";
+  });
   const [password, setPassword] = React.useState("");
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
+    const enteredEmail = email.trim().toLowerCase();
+
     startTransition(async () => {
       const res = await loginAction(null, formData);
       setResult(res);
       if (res.success) {
+        try {
+          localStorage.setItem("campusflow_last_email", enteredEmail);
+          localStorage.setItem("campusflow_logged_in", "true");
+        } catch {
+          // ignore
+        }
         router.push("/dashboard");
         router.refresh();
       }
@@ -60,14 +79,29 @@ export default function LoginPage() {
           <CardHeader className="pb-4">
             <div className="flex items-center justify-between">
               <CardTitle className="text-lg">Secure Login</CardTitle>
-              <Badge variant="purple">Encrypted Session</Badge>
+              <Badge variant="purple">Persistent Session</Badge>
             </div>
             <CardDescription>
-              Sign in with your registered college credentials.
+              Sign in with your Google account or registered credentials.
             </CardDescription>
           </CardHeader>
 
           <CardContent className="space-y-5">
+            {/* 1-Click Google / Gmail Sign In */}
+            <div className="space-y-3">
+              <GoogleSignInButton label="Continue with Google / Gmail" />
+              <div className="relative my-4">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t border-zinc-200 dark:border-zinc-800" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-white dark:bg-zinc-950 px-2 text-zinc-400 font-medium">
+                    or continue with password
+                  </span>
+                </div>
+              </div>
+            </div>
+
             {/* Quick Demo Credentials for Fast Evaluation */}
             <div className="p-3 rounded-xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 space-y-2">
               <div className="flex items-center justify-between text-[11px] font-semibold text-zinc-500 uppercase tracking-wider">
@@ -117,7 +151,7 @@ export default function LoginPage() {
 
               <div>
                 <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1.5">
-                  Email Address
+                  Email Address / Gmail
                 </label>
                 <Input
                   name="email"
@@ -158,10 +192,14 @@ export default function LoginPage() {
                   type="checkbox"
                   id="rememberMe"
                   name="rememberMe"
-                  className="rounded border-zinc-300 text-indigo-600 focus:ring-indigo-500 w-4 h-4"
+                  defaultChecked={true}
+                  className="rounded border-zinc-300 text-indigo-600 focus:ring-indigo-500 w-4 h-4 cursor-pointer"
                 />
-                <label htmlFor="rememberMe" className="text-xs text-zinc-600 dark:text-zinc-400 select-none">
-                  Keep me signed in for 30 days
+                <label
+                  htmlFor="rememberMe"
+                  className="text-xs text-zinc-600 dark:text-zinc-400 select-none cursor-pointer"
+                >
+                  Keep me signed in on this device (Desktop & Mobile)
                 </label>
               </div>
 

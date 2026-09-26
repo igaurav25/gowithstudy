@@ -166,9 +166,54 @@ describe("Unit: Authentication & Credential Security", () => {
       expect(verified).toBeNull();
     });
 
-    it("should observe correct persistent session lifetimes", () => {
-      expect(SESSION_DURATION_DEFAULT).toBe(7 * 24 * 60 * 60); // 7 days
-      expect(SESSION_DURATION_REMEMBER).toBe(30 * 24 * 60 * 60); // 30 days
+    it("should observe correct persistent session lifetimes (30 days default, 60 days remember for mobile & desktop)", () => {
+      expect(SESSION_DURATION_DEFAULT).toBe(30 * 24 * 60 * 60); // 30 days
+      expect(SESSION_DURATION_REMEMBER).toBe(60 * 24 * 60 * 60); // 60 days
+    });
+  });
+
+  describe("Google / Gmail Persistent Authentication", () => {
+    it("should auto-provision a new student account when signing in with Gmail for the first time", async () => {
+      const { AuthService } = await import("@/services/auth-service");
+      const randomGmail = `student_${Date.now()}@gmail.com`;
+
+      const result = await AuthService.googleAuth({
+        email: randomGmail,
+        name: "Rohan Verma",
+      });
+
+      expect(result.isNewUser).toBe(true);
+      expect(result.user.email).toBe(randomGmail);
+      expect(result.user.name).toBe("Rohan Verma");
+      expect(result.user.emailVerified).toBe(true);
+      expect(result.user.role).toBe("USER");
+      expect(result.sessionId.startsWith("ses_")).toBe(true);
+
+      // Verify that this user can be retrieved without re-registering
+      const retrieved = await AuthService.getUserByEmail(randomGmail);
+      expect(retrieved).not.toBeNull();
+      expect(retrieved?.email).toBe(randomGmail);
+    });
+
+    it("should recognize an existing Gmail user and avoid creating duplicate accounts", async () => {
+      const { AuthService } = await import("@/services/auth-service");
+      const existingGmail = `existing_${Date.now()}@gmail.com`;
+
+      // First sign-in
+      const first = await AuthService.googleAuth({
+        email: existingGmail,
+        name: "Ananya Patel",
+      });
+      expect(first.isNewUser).toBe(true);
+
+      // Second sign-in from another device (e.g. mobile after desktop)
+      const second = await AuthService.googleAuth({
+        email: existingGmail,
+      });
+      expect(second.isNewUser).toBe(false);
+      expect(second.user.id).toBe(first.user.id);
+      expect(second.user.email).toBe(existingGmail);
+      expect(second.user.name).toBe("Ananya Patel");
     });
   });
 });

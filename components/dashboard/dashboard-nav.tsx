@@ -23,6 +23,8 @@ import {
   Rocket,
   ShieldCheck,
   Building2,
+  Search,
+  Bot,
 } from "lucide-react";
 
 export function DashboardNav({
@@ -36,12 +38,14 @@ export function DashboardNav({
 
   const navLinks = [
     { label: "Overview", href: "/dashboard", icon: LayoutDashboard },
+    { label: "Ask AI", href: "/dashboard/search", icon: Search },
+    { label: "AI Tutor", href: "/dashboard/tutor", icon: Bot },
+    { label: "AI Copilot", href: "/dashboard/ai", icon: Sparkles },
     { label: "Notes", href: "/dashboard/notes", icon: FileText },
     { label: "Syllabus", href: "/dashboard/syllabus", icon: BookOpen },
     { label: "Timetable", href: "/dashboard/timetable", icon: Calendar },
     { label: "Assignments", href: "/dashboard/assignments", icon: CheckSquare },
-    { label: "AI Copilot", href: "/dashboard/ai", icon: Sparkles },
-    { label: "DSA Tracker", href: "/dashboard/placement", icon: Code2 },
+    { label: "DSA", href: "/dashboard/placement", icon: Code2 },
     { label: "Internships", href: "/dashboard/internships", icon: Briefcase },
     { label: "Community", href: "/dashboard/community", icon: Users2 },
     { label: "Projects", href: "/dashboard/projects", icon: Rocket },
@@ -86,6 +90,13 @@ export function DashboardNav({
 
         {/* Right Tools & User Profile */}
         <div className="flex items-center gap-3">
+          <Link
+            href="/dashboard/search"
+            className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full border border-zinc-200/80 dark:border-zinc-800 bg-zinc-50/70 dark:bg-zinc-900/70 text-xs text-zinc-600 dark:text-zinc-300 hover:text-indigo-600 dark:hover:text-indigo-400 hover:border-indigo-500/40 transition-colors shadow-xs"
+          >
+            <Search className="w-3.5 h-3.5 text-indigo-500" />
+            <span className="font-medium">Ask AI</span>
+          </Link>
           <ThemeToggle />
           <NotificationsDrawer initialNotifications={notifications} />
 

@@ -13,6 +13,8 @@ import {
   Users2,
   Check,
   Building2,
+  Search,
+  Bot,
 } from "lucide-react";
 
 export function QuickActionsBar() {
@@ -20,6 +22,22 @@ export function QuickActionsBar() {
   const [successMsg, setSuccessMsg] = React.useState<string | null>(null);
 
   const actions = [
+    {
+      id: "universal_search",
+      label: "Ask CampusFlow",
+      icon: Search,
+      color: "from-indigo-600 to-violet-600",
+      description: "Universal AI Search across web, courses & syllabus with citations.",
+      href: "/dashboard/search",
+    },
+    {
+      id: "ai_tutor",
+      label: "AI Tutor",
+      icon: Bot,
+      color: "from-violet-600 to-fuchsia-600",
+      description: "Interactive course teacher with voice avatar & understanding checks.",
+      href: "/dashboard/tutor",
+    },
     {
       id: "upload_notes",
       label: "Upload Notes",
@@ -30,7 +48,7 @@ export function QuickActionsBar() {
     },
     {
       id: "ask_ai",
-      label: "Ask AI",
+      label: "AI Copilot",
       icon: Sparkles,
       color: "from-purple-500 to-violet-600",
       description: "Ask conceptual questions or query your uploaded course materials.",

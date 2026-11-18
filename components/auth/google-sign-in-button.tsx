@@ -11,34 +11,30 @@ interface GoogleSignInButtonProps {
   className?: string;
 }
 
+const subscribeNoop = () => () => {};
+function getRememberedEmailSnapshot(): string | null {
+  try {
+    const stored = localStorage.getItem("campusflow_last_email");
+    return stored && stored.includes("@") ? stored : null;
+  } catch {
+    return null;
+  }
+}
+
 export function GoogleSignInButton({
   label = "Continue with Google",
   className = "",
 }: GoogleSignInButtonProps) {
   const router = useRouter();
   const [isOpen, setIsOpen] = React.useState(false);
-  const [rememberedEmail] = React.useState<string | null>(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const stored = localStorage.getItem("campusflow_last_email");
-        if (stored && stored.includes("@")) return stored;
-      } catch {
-        // localStorage restricted
-      }
-    }
-    return null;
-  });
-  const [email, setEmail] = React.useState<string>(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const stored = localStorage.getItem("campusflow_last_email");
-        if (stored && stored.includes("@")) return stored;
-      } catch {
-        // localStorage restricted
-      }
-    }
-    return "";
-  });
+  const rememberedEmail = React.useSyncExternalStore(
+    subscribeNoop,
+    getRememberedEmailSnapshot,
+    () => null
+  );
+  const [emailInput, setEmailInput] = React.useState<string | null>(null);
+  const email = emailInput ?? rememberedEmail ?? "";
+  const setEmail = (val: string) => setEmailInput(val);
   const [isPending, setIsPending] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [successMsg, setSuccessMsg] = React.useState<string | null>(null);
@@ -66,10 +62,10 @@ export function GoogleSignInButton({
           // ignore
         }
 
+        const redirectUrl = res.data.redirectUrl || "/dashboard";
         setTimeout(() => {
-          router.push(res.data?.redirectUrl || "/dashboard");
-          router.refresh();
-        }, 500);
+          router.replace(redirectUrl);
+        }, 300);
       } else {
         setError(res.message || "Sign in failed. Please try again.");
       }

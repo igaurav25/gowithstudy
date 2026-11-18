@@ -110,4 +110,26 @@ describe("E2E: Edge Proxy, Route Protection & Security Headers", () => {
     expect(response.headers.get("Content-Security-Policy")).toContain("default-src 'self'");
     expect(response.headers.get("Strict-Transport-Security")).toContain("max-age=63072000");
   });
+
+  it("Step 8: Should clear session cookie and avoid /login <-> /dashboard redirect loop on ?sessionExpired=1", async () => {
+    const staleToken = await createSessionToken({
+      userId: "usr_cold_start_missing",
+      email: "coldstart@gmail.com",
+      name: "Cold Start Student",
+      role: "USER",
+      sessionId: "ses_cold_start",
+    });
+
+    const request = new NextRequest("http://localhost:3000/login?sessionExpired=1", {
+      headers: {
+        cookie: `campusflow_session=${staleToken}`,
+      },
+    });
+
+    const response = await proxy(request);
+    expect(response.status).toBe(200);
+    expect(response.headers.get("location")).toBeNull();
+    const setCookie = response.headers.get("set-cookie") || "";
+    expect(setCookie).toContain("campusflow_session=");
+  });
 });

@@ -1,6 +1,7 @@
 import { AuthService, StoredUser } from "@/services/auth-service";
 import { UpdateProfileInput, ChangePasswordInput, UpdatePreferencesInput } from "@/schemas/profile";
-import { hashPassword, comparePassword } from "@/lib/auth";
+import { hashPassword, comparePassword, getSession } from "@/lib/auth";
+import { UserSessionPayload } from "@/lib/rbac";
 
 export interface StudentProfileData extends StoredUser {
   bio: string;
@@ -17,9 +18,23 @@ const profileExtensions: Map<string, Partial<StudentProfileData>> = new Map();
 export const ProfileService = {
   /**
    * Retrieves full profile data for a user.
+   * Falls back to hydrating from the verified JWT session in serverless environments
+   * where in-memory stores reset between cold starts or instances.
    */
-  async getProfile(userId: string): Promise<StudentProfileData | null> {
-    const user = await AuthService.getUserById(userId);
+  async getProfile(
+    userId: string,
+    sessionFallback?: UserSessionPayload
+  ): Promise<StudentProfileData | null> {
+    let user = await AuthService.getUserById(userId);
+    if (!user) {
+      const session =
+        sessionFallback && sessionFallback.userId === userId
+          ? sessionFallback
+          : await getSession();
+      if (session && session.userId === userId) {
+        user = await AuthService.ensureUserFromSession(session);
+      }
+    }
     if (!user) return null;
 
     const extension = profileExtensions.get(userId) || {};
@@ -43,8 +58,21 @@ export const ProfileService = {
   /**
    * Updates student personal and academic profile fields.
    */
-  async updateProfile(userId: string, data: UpdateProfileInput): Promise<StudentProfileData> {
-    const user = await AuthService.getUserById(userId);
+  async updateProfile(
+    userId: string,
+    data: UpdateProfileInput,
+    sessionFallback?: UserSessionPayload
+  ): Promise<StudentProfileData> {
+    let user = await AuthService.getUserById(userId);
+    if (!user) {
+      const session =
+        sessionFallback && sessionFallback.userId === userId
+          ? sessionFallback
+          : await getSession();
+      if (session && session.userId === userId) {
+        user = await AuthService.ensureUserFromSession(session);
+      }
+    }
     if (!user) {
       throw new Error("User not found.");
     }
@@ -72,7 +100,7 @@ export const ProfileService = {
 
     profileExtensions.set(userId, updatedExt);
 
-    return (await this.getProfile(userId))!;
+    return (await this.getProfile(userId, sessionFallback))!;
   },
 
   /**

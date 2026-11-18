@@ -68,7 +68,9 @@ export async function setSessionCookie(
   durationSeconds: number = SESSION_DURATION_DEFAULT
 ): Promise<void> {
   const cookieStore = await cookies();
-  const isHttps = process.env.NEXT_PUBLIC_APP_URL?.startsWith("https://") ?? false;
+  const isHttps =
+    (process.env.NEXT_PUBLIC_APP_URL?.startsWith("https://") ?? false) ||
+    Boolean(process.env.VERCEL);
   cookieStore.set(COOKIE_NAME, token, {
     httpOnly: true,
     // Enforce secure flag in production HTTPS, allow local development testing from mobile Wi-Fi

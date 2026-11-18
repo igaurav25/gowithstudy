@@ -11,21 +11,28 @@ import { Badge } from "@/components/ui/badge";
 import { GoogleSignInButton } from "@/components/auth/google-sign-in-button";
 import { GraduationCap, ArrowRight, Sparkles, User, ShieldCheck } from "lucide-react";
 
+const subscribeNoop = () => () => {};
+function getStoredEmailSnapshot(): string {
+  try {
+    const stored = localStorage.getItem("campusflow_last_email");
+    return stored && stored.includes("@") ? stored : "";
+  } catch {
+    return "";
+  }
+}
+
 export default function LoginPage() {
   const router = useRouter();
   const [isPending, startTransition] = React.useTransition();
   const [result, setResult] = React.useState<ActionResult | null>(null);
-  const [email, setEmail] = React.useState<string>(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const stored = localStorage.getItem("campusflow_last_email");
-        if (stored && stored.includes("@")) return stored;
-      } catch {
-        // ignore
-      }
-    }
-    return "";
-  });
+  const storedEmail = React.useSyncExternalStore(
+    subscribeNoop,
+    getStoredEmailSnapshot,
+    () => ""
+  );
+  const [emailInput, setEmailInput] = React.useState<string | null>(null);
+  const email = emailInput ?? storedEmail;
+  const setEmail = (val: string) => setEmailInput(val);
   const [password, setPassword] = React.useState("");
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -43,8 +50,7 @@ export default function LoginPage() {
         } catch {
           // ignore
         }
-        router.push("/dashboard");
-        router.refresh();
+        router.replace("/dashboard");
       }
     });
   };

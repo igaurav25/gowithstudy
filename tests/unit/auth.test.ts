@@ -215,5 +215,28 @@ describe("Unit: Authentication & Credential Security", () => {
       expect(second.user.email).toBe(existingGmail);
       expect(second.user.name).toBe("Ananya Patel");
     });
+
+    it("should hydrate profile and dashboard data from verified JWT session on serverless cold start", async () => {
+      const { DashboardService } = await import("@/services/dashboard-service");
+      const ephemeralUserId = `usr_serverless_${Date.now()}`;
+      const sessionPayload = {
+        userId: ephemeralUserId,
+        email: `coldstart_${Date.now()}@gmail.com`,
+        name: "Serverless Student",
+        role: "USER" as const,
+        college: "DTU",
+        course: "B.Tech",
+        branch: "CSE",
+        year: 2,
+        semester: 4,
+        sessionId: "ses_serverless_test",
+      };
+
+      const data = await DashboardService.getDashboardData(ephemeralUserId, sessionPayload);
+      expect(data).not.toBeNull();
+      expect(data?.student.id).toBe(ephemeralUserId);
+      expect(data?.student.name).toBe("Serverless Student");
+      expect(data?.student.college).toBe("DTU");
+    });
   });
 });

@@ -28,9 +28,9 @@ export default async function DashboardPage() {
     redirect("/login");
   }
 
-  const data = await DashboardService.getDashboardData(session.userId);
+  const data = await DashboardService.getDashboardData(session.userId, session);
   if (!data) {
-    redirect("/login");
+    redirect("/login?sessionExpired=1");
   }
 
   return (

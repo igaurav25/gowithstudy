@@ -1,5 +1,6 @@
 import { StoredUser, AuthService } from "@/services/auth-service";
 import { ProfileService, StudentProfileData } from "@/services/profile-service";
+import { UserSessionPayload } from "@/lib/rbac";
 import { NotesService } from "@/services/notes-service";
 import { TimetableService } from "@/services/timetable-service";
 import { AssignmentsService } from "@/services/assignments-service";
@@ -77,8 +78,11 @@ export const DashboardService = {
   /**
    * Fetches all aggregated dashboard data for an authenticated student.
    */
-  async getDashboardData(userId: string): Promise<DashboardMetrics | null> {
-    const profile = await ProfileService.getProfile(userId);
+  async getDashboardData(
+    userId: string,
+    sessionFallback?: UserSessionPayload
+  ): Promise<DashboardMetrics | null> {
+    const profile = await ProfileService.getProfile(userId, sessionFallback);
     if (!profile) return null;
 
     // Fetch dynamic today's schedule from TimetableService

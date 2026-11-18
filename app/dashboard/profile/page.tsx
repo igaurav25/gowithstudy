@@ -12,9 +12,9 @@ export default async function StudentProfilePage() {
     redirect("/login");
   }
 
-  const profile = await ProfileService.getProfile(session.userId);
+  const profile = await ProfileService.getProfile(session.userId, session);
   if (!profile) {
-    redirect("/login");
+    redirect("/login?sessionExpired=1");
   }
 
   return (

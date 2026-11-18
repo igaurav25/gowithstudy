@@ -47,7 +47,7 @@ export async function updateProfileAction(
   }
 
   try {
-    const updated = await ProfileService.updateProfile(session.userId, validation.data);
+    const updated = await ProfileService.updateProfile(session.userId, validation.data, session);
     revalidatePath("/dashboard/profile");
     revalidatePath("/dashboard");
     return {

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { jwtVerify } from "jose";
+import { jwtVerify, type JWTPayload } from "jose";
 import { checkRateLimit, getRateLimitHeaders } from "@/lib/rate-limit";
 import { validateSafeRedirect } from "@/lib/security";
 
@@ -125,7 +125,7 @@ export async function proxy(request: NextRequest) {
 
   // 5. Session Verification
   const token = request.cookies.get(COOKIE_NAME)?.value;
-  let session: any = null;
+  let session: (JWTPayload & { role?: string }) | null = null;
   if (token) {
     try {
       const { payload } = await jwtVerify(token, SECRET_KEY, {
@@ -156,8 +156,14 @@ export async function proxy(request: NextRequest) {
     }
   }
 
-  // Auth pages (login/signup) redirect to dashboard if already logged in
+  // Auth pages (login/signup) redirect to dashboard if already logged in,
+  // UNLESS explicitly redirected with ?sessionExpired=1 (prevents /login <-> /dashboard infinite redirect loops).
   if ((pathname === "/login" || pathname === "/signup") && session) {
+    if (searchParams.get("sessionExpired") === "1") {
+      const response = NextResponse.next();
+      response.cookies.delete(COOKIE_NAME);
+      return applySecurityHeaders(response);
+    }
     return applySecurityHeaders(NextResponse.redirect(new URL("/dashboard", request.url)));
   }
 

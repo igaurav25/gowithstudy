@@ -1,5 +1,5 @@
 import { hashPassword, comparePassword } from "@/lib/auth";
-import { Role } from "@/lib/rbac";
+import { Role, UserSessionPayload } from "@/lib/rbac";
 import { SignupInput, LoginInput } from "@/schemas/auth";
 import { prisma } from "@/lib/prisma";
 import { isDbConnected } from "@/lib/db-check";
@@ -48,11 +48,15 @@ class AuthStore {
   public verificationTokens: Map<string, VerificationToken> = new Map();
   public resetTokens: Map<string, PasswordResetToken> = new Map();
   public sessions: Map<string, ActiveSession> = new Map();
-  private initialized = false;
+  private initPromise: Promise<void>;
   private diskFilePath = path.join(process.cwd(), ".data", "auth-users.json");
 
   constructor() {
-    this.initDefaultUsers();
+    this.initPromise = this.initDefaultUsers();
+  }
+
+  public async ensureReady(): Promise<void> {
+    await this.initPromise;
   }
 
   private loadUsersFromDisk(): void {
@@ -69,12 +73,13 @@ class AuthStore {
           }
         }
       }
-    } catch (e) {
-      console.warn("Failed to load users from persistent disk store:", e);
+    } catch {
+      // Serverless / read-only environments may not have local disk storage
     }
   }
 
   public saveUsersToDisk(): void {
+    if (process.env.VERCEL) return;
     try {
       const dir = path.dirname(this.diskFilePath);
       if (!fs.existsSync(dir)) {
@@ -82,8 +87,8 @@ class AuthStore {
       }
       const list = Array.from(this.users.values());
       fs.writeFileSync(this.diskFilePath, JSON.stringify(list, null, 2), "utf8");
-    } catch (e) {
-      console.warn("Failed to persist users to disk store:", e);
+    } catch {
+      // Ignore read-only filesystem errors in serverless/container deployments
     }
   }
 
@@ -106,10 +111,26 @@ class AuthStore {
     return null;
   }
 
-  private async initDefaultUsers() {
-    if (this.initialized) return;
-    this.initialized = true;
+  public loadUserByIdFromDisk(userId: string): StoredUser | null {
+    try {
+      if (fs.existsSync(this.diskFilePath)) {
+        const raw = fs.readFileSync(this.diskFilePath, "utf8");
+        const list = JSON.parse(raw) as StoredUser[];
+        const found = list.find((u) => u.id === userId);
+        if (found) {
+          return {
+            ...found,
+            createdAt: new Date(found.createdAt),
+          };
+        }
+      }
+    } catch {
+      // fallback silently
+    }
+    return null;
+  }
 
+  private async initDefaultUsers() {
     const defaultPasswordHash = await hashPassword("Password123!");
 
     const defaultUsers: StoredUser[] = [
@@ -158,7 +179,9 @@ class AuthStore {
     ];
 
     for (const u of defaultUsers) {
-      this.users.set(u.email.toLowerCase(), u);
+      if (!this.users.has(u.email.toLowerCase())) {
+        this.users.set(u.email.toLowerCase(), u);
+      }
     }
 
     // Load any previously registered student accounts (Gmail, college accounts)
@@ -477,12 +500,21 @@ export const AuthService = {
    * Fetches user by ID, checking memory cache, persistent disk storage, and PostgreSQL.
    */
   async getUserById(userId: string): Promise<StoredUser | null> {
+    await store.ensureReady();
+
     // 1. Check in-memory map
     for (const user of store.users.values()) {
       if (user.id === userId) return user;
     }
 
-    // 2. Check Database if connected
+    // 2. Check persistent disk file
+    const diskUser = store.loadUserByIdFromDisk(userId);
+    if (diskUser) {
+      store.users.set(diskUser.email.toLowerCase(), diskUser);
+      return diskUser;
+    }
+
+    // 3. Check Database if connected
     try {
       if (await isDbConnected()) {
         const dbUser = await prisma.user.findUnique({
@@ -518,9 +550,55 @@ export const AuthService = {
   },
 
   /**
+   * Reconstructs and caches a StoredUser from a cryptographically verified JWT session
+   * when running in ephemeral/serverless environments (e.g. Vercel cold starts) where
+   * in-memory and local disk stores do not persist across instances.
+   */
+  async ensureUserFromSession(session: UserSessionPayload): Promise<StoredUser> {
+    const existingById = await this.getUserById(session.userId);
+    if (existingById) return existingById;
+
+    if (session.email) {
+      const existingByEmail = await this.getUserByEmail(session.email);
+      if (existingByEmail) return existingByEmail;
+    }
+
+    const normalizedEmail = (session.email || `${session.userId}@gowithstudy.local`)
+      .toLowerCase()
+      .trim();
+    const derivedName =
+      session.name?.trim() ||
+      normalizedEmail
+        .split("@")[0]
+        .replace(/[._]/g, " ")
+        .replace(/\b\w/g, (c) => c.toUpperCase());
+
+    const hydratedUser: StoredUser = {
+      id: session.userId,
+      name: derivedName,
+      email: normalizedEmail,
+      passwordHash: "",
+      role: session.role || "USER",
+      college: session.college || "CampusFlow University",
+      course: session.course || "B.Tech",
+      branch: session.branch || "Computer Science & Engineering",
+      year: session.year || 1,
+      semester: session.semester || 1,
+      emailVerified: true,
+      avatarUrl: `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(derivedName)}`,
+      createdAt: new Date(),
+    };
+
+    store.users.set(normalizedEmail, hydratedUser);
+    store.saveUsersToDisk();
+    return hydratedUser;
+  },
+
+  /**
    * Fetches user by Email, checking memory cache, persistent disk storage, and PostgreSQL.
    */
   async getUserByEmail(email: string): Promise<StoredUser | null> {
+    await store.ensureReady();
     const normalized = email.toLowerCase().trim();
 
     // 1. Check in-memory map

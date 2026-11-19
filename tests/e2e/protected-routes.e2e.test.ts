@@ -132,4 +132,26 @@ describe("E2E: Edge Proxy, Route Protection & Security Headers", () => {
     const setCookie = response.headers.get("set-cookie") || "";
     expect(setCookie).toContain("campusflow_session=");
   });
+
+  it("Step 9: Should prevent Chrome navigation throttling loop when redirected from /dashboard", async () => {
+    const staleToken = await createSessionToken({
+      userId: "usr_loop_test",
+      email: "loop@gmail.com",
+      name: "Loop Test",
+      role: "USER",
+      sessionId: "ses_loop",
+    });
+
+    const request = new NextRequest("http://localhost:3000/login", {
+      headers: {
+        cookie: `campusflow_session=${staleToken}`,
+        referer: "http://localhost:3000/dashboard",
+      },
+    });
+
+    const response = await proxy(request);
+    // Must NOT redirect back to /dashboard
+    expect(response.status).toBe(200);
+    expect(response.headers.get("location")).toBeNull();
+  });
 });

@@ -21,7 +21,7 @@ export default async function DashboardPage() {
   const session = await getSession();
 
   if (!session) {
-    redirect("/login");
+    redirect("/login?sessionExpired=1");
   }
 
   const [data, exams] = await Promise.all([

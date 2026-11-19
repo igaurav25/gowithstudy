@@ -158,15 +158,23 @@ export async function proxy(request: NextRequest) {
     }
   }
 
-  // Auth pages (login/signup) redirect to dashboard if already logged in,
-  // UNLESS explicitly redirected with ?sessionExpired=1 (prevents /login <-> /dashboard infinite redirect loops).
-  if ((pathname === "/login" || pathname === "/signup") && session) {
-    if (searchParams.get("sessionExpired") === "1") {
+  // 6. Auth pages (login/signup): Defeat infinite navigation loops
+  if (pathname === "/login" || pathname === "/signup") {
+    const isExplicitReauth =
+      searchParams.get("sessionExpired") === "1" ||
+      searchParams.has("callbackUrl") ||
+      Boolean(request.headers.get("referer")?.includes("/dashboard"));
+
+    if (isExplicitReauth || !session || !session.userId) {
       const response = NextResponse.next();
-      response.cookies.delete(COOKIE_NAME);
-      response.cookies.delete("campusflow_session");
+      if (searchParams.get("sessionExpired") === "1" || !session) {
+        response.cookies.delete(COOKIE_NAME);
+        response.cookies.delete("campusflow_session");
+      }
       return applySecurityHeaders(response);
     }
+
+    // Only redirect to dashboard if session is fully valid, verified, and not coming from a dashboard re-auth redirect
     return applySecurityHeaders(NextResponse.redirect(new URL("/dashboard", request.url)));
   }
 

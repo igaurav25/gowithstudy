@@ -4,7 +4,7 @@ import * as React from "react";
 import { TimetableItem } from "@/services/timetable-service";
 import { DayOfWeek, DAYS_OF_WEEK } from "@/schemas/timetable";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { Clock, MapPin, User, Trash2 } from "lucide-react";
 
 interface WeeklyScheduleGridProps {
@@ -50,96 +50,151 @@ export function WeeklyScheduleGrid({
     ? [...DAYS_OF_WEEK]
     : ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
 
-  return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-      {displayDays.map((day) => {
-        const isToday = currentDay.toLowerCase() === day.toLowerCase();
-        const dayClasses = groupedClasses[day];
+  // Mobile selected day defaults to today (if in displayDays), or Monday
+  const [activeMobileDay, setActiveMobileDay] = React.useState<DayOfWeek>(() => {
+    const matched = displayDays.find((d) => d.toLowerCase() === currentDay.toLowerCase());
+    return matched || "Monday";
+  });
 
-        return (
-          <div
-            key={day}
-            className={`rounded-2xl border p-4 flex flex-col justify-between transition-all ${
-              isToday
-                ? "border-indigo-500/60 bg-indigo-50/20 dark:bg-indigo-950/10 shadow-md shadow-indigo-500/5 ring-1 ring-indigo-500/30"
-                : "border-zinc-200/80 dark:border-zinc-800 bg-white/70 dark:bg-zinc-900/60"
-            }`}
-          >
-            {/* Day Header */}
-            <div className="pb-3 border-b border-zinc-200/60 dark:border-zinc-800 flex items-center justify-between">
-              <div>
-                <h3 className="font-bold text-sm text-zinc-900 dark:text-zinc-50">
-                  {day}
-                </h3>
-                <span className="text-[11px] text-zinc-500">
-                  {dayClasses.length} {dayClasses.length === 1 ? "Class" : "Classes"}
-                </span>
-              </div>
-              {isToday && (
-                <Badge variant="purple" className="text-[10px] py-0">
-                  Today
-                </Badge>
-              )}
-            </div>
+  const renderDayCard = (day: DayOfWeek) => {
+    const isToday = currentDay.toLowerCase() === day.toLowerCase();
+    const dayClasses = groupedClasses[day];
 
-            {/* Class Cards for this Day */}
-            <div className="space-y-3 pt-3 flex-1">
-              {dayClasses.length === 0 ? (
-                <div className="py-8 text-center text-xs text-zinc-400 italic">
-                  No classes scheduled
-                </div>
-              ) : (
-                dayClasses.map((item) => {
-                  const colorClass = getSubjectColor(item.subject);
-                  return (
-                    <div
-                      key={item.id}
-                      className={`p-3 rounded-xl border ${colorClass} transition-all hover:scale-[1.01] relative group flex flex-col justify-between gap-2`}
-                    >
-                      <div className="flex items-start justify-between gap-1">
-                        <h4 className="font-bold text-xs leading-snug truncate">
-                          {item.subject}
-                        </h4>
-                        <button
-                          type="button"
-                          onClick={() => onDeleteClass(item.id)}
-                          aria-label={`Remove ${item.subject}`}
-                          className="opacity-0 group-hover:opacity-100 transition-opacity text-zinc-400 hover:text-rose-500"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-
-                      <div className="space-y-1 text-[11px] opacity-90">
-                        <div className="flex items-center gap-1 font-semibold">
-                          <Clock className="w-3 h-3 shrink-0" />
-                          <span>
-                            {item.startTime} - {item.endTime}
-                          </span>
-                        </div>
-
-                        {item.room && (
-                          <div className="flex items-center gap-1">
-                            <MapPin className="w-3 h-3 shrink-0 text-zinc-400" />
-                            <span>{item.room}</span>
-                          </div>
-                        )}
-
-                        {item.faculty && (
-                          <div className="flex items-center gap-1 text-[10px]">
-                            <User className="w-3 h-3 shrink-0 text-zinc-400" />
-                            <span className="truncate">{item.faculty}</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })
-              )}
-            </div>
+    return (
+      <div
+        key={day}
+        className={`rounded-2xl border p-4 flex flex-col justify-between transition-all ${
+          isToday
+            ? "border-indigo-500/60 bg-indigo-50/20 dark:bg-indigo-950/10 shadow-md shadow-indigo-500/5 ring-1 ring-indigo-500/30"
+            : "border-zinc-200/80 dark:border-zinc-800 bg-white/70 dark:bg-zinc-900/60"
+        }`}
+      >
+        {/* Day Header */}
+        <div className="pb-3 border-b border-zinc-200/60 dark:border-zinc-800 flex items-center justify-between">
+          <div>
+            <h3 className="font-bold text-sm text-zinc-900 dark:text-zinc-50">
+              {day}
+            </h3>
+            <span className="text-[11px] text-zinc-500">
+              {dayClasses.length} {dayClasses.length === 1 ? "Class" : "Classes"}
+            </span>
           </div>
-        );
-      })}
+          {isToday && (
+            <Badge variant="purple" className="text-[10px] py-0">
+              Today
+            </Badge>
+          )}
+        </div>
+
+        {/* Class Cards for this Day */}
+        <div className="space-y-3 pt-3 flex-1">
+          {dayClasses.length === 0 ? (
+            <div className="py-8 text-center text-xs text-zinc-400 italic">
+              No classes scheduled on {day}
+            </div>
+          ) : (
+            dayClasses.map((item) => {
+              const colorClass = getSubjectColor(item.subject);
+              return (
+                <div
+                  key={item.id}
+                  className={`p-3 rounded-xl border ${colorClass} transition-all hover:scale-[1.01] relative group flex flex-col justify-between gap-2`}
+                >
+                  <div className="flex items-start justify-between gap-1">
+                    <h4 className="font-bold text-xs leading-snug truncate">
+                      {item.subject}
+                    </h4>
+                    <button
+                      type="button"
+                      onClick={() => onDeleteClass(item.id)}
+                      aria-label={`Remove ${item.subject}`}
+                      className="opacity-70 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity text-zinc-400 hover:text-rose-500 p-1 -m-1 touch-manipulation"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+
+                  <div className="space-y-1 text-[11px] opacity-90">
+                    <div className="flex items-center gap-1 font-semibold">
+                      <Clock className="w-3 h-3 shrink-0" />
+                      <span>
+                        {item.startTime} - {item.endTime}
+                      </span>
+                    </div>
+
+                    {item.room && (
+                      <div className="flex items-center gap-1">
+                        <MapPin className="w-3 h-3 shrink-0 text-zinc-400" />
+                        <span>{item.room}</span>
+                      </div>
+                    )}
+
+                    {item.faculty && (
+                      <div className="flex items-center gap-1 text-[10px]">
+                        <User className="w-3 h-3 shrink-0 text-zinc-400" />
+                        <span className="truncate">{item.faculty}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div className="space-y-3">
+      {/* Mobile Day Selector Bar (< 640px) */}
+      <div className="flex sm:hidden items-center gap-1.5 overflow-x-auto pb-2 scrollbar-none -mx-2 px-2">
+        {displayDays.map((day) => {
+          const isSelected = activeMobileDay === day;
+          const isToday = currentDay.toLowerCase() === day.toLowerCase();
+          const count = groupedClasses[day].length;
+          const shortName = day.slice(0, 3);
+
+          return (
+            <button
+              key={day}
+              type="button"
+              onClick={() => setActiveMobileDay(day)}
+              className={cn(
+                "px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 touch-manipulation min-h-[38px] shrink-0",
+                isSelected
+                  ? "bg-indigo-600 text-white shadow-sm shadow-indigo-500/20"
+                  : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200"
+              )}
+            >
+              <span>{shortName}</span>
+              {isToday && (
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" title="Today" />
+              )}
+              <span
+                className={cn(
+                  "text-[10px] px-1.5 py-0.2 rounded-full font-mono",
+                  isSelected
+                    ? "bg-white/20 text-white"
+                    : "bg-zinc-200 dark:bg-zinc-700 text-zinc-700 dark:text-zinc-300"
+                )}
+              >
+                {count}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Mobile Single Day View */}
+      <div className="block sm:hidden">
+        {renderDayCard(activeMobileDay)}
+      </div>
+
+      {/* Desktop Weekly Grid */}
+      <div className="hidden sm:grid sm:grid-cols-2 lg:grid-cols-5 gap-4">
+        {displayDays.map((day) => renderDayCard(day))}
+      </div>
     </div>
   );
 }

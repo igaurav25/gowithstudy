@@ -1,4 +1,6 @@
 import { hashPassword, comparePassword } from "@/lib/auth";
+import { verifyDeviceToken } from "@/lib/crypto-auth";
+import { canonicalizeEmail, canonicalizePhone } from "@/lib/canonicalize";
 import { Role, UserSessionPayload } from "@/lib/rbac";
 import { SignupInput, LoginInput } from "@/schemas/auth";
 import { prisma } from "@/lib/prisma";
@@ -11,6 +13,8 @@ export interface StoredUser {
   id: string;
   name: string;
   email: string;
+  username?: string;
+  phone?: string;
   passwordHash: string;
   role: Role;
   college: string;
@@ -19,6 +23,7 @@ export interface StoredUser {
   year: number;
   semester: number;
   emailVerified: boolean;
+  phoneVerified?: boolean;
   avatarUrl?: string;
   createdAt: Date;
 }
@@ -45,9 +50,12 @@ export interface ActiveSession {
 // Persistent state across requests, reloads, mobile & desktop sessions
 class AuthStore {
   public users: Map<string, StoredUser> = new Map();
+  public usersByUsername: Map<string, string> = new Map();
+  public usersByPhone: Map<string, string> = new Map();
   public verificationTokens: Map<string, VerificationToken> = new Map();
   public resetTokens: Map<string, PasswordResetToken> = new Map();
   public sessions: Map<string, ActiveSession> = new Map();
+  public trustedDevices: Map<string, Array<{ tokenHash: string; createdAt: Date }>> = new Map();
   private initPromise: Promise<void>;
   private diskFilePath = path.join(process.cwd(), ".data", "auth-users.json");
 
@@ -239,6 +247,187 @@ if (!globalStore.__authStore) {
 const store = globalStore.__authStore;
 
 export const AuthService = {
+  /**
+   * Retrieves user by username, email, or phone identifier
+   */
+  async getUserByIdentifier(identifier: string): Promise<StoredUser | null> {
+    await store.ensureReady();
+    const clean = identifier.trim().toLowerCase();
+    const canonical = clean.includes("@") ? canonicalizeEmail(clean) : clean;
+
+    // 1. Direct email or canonical email lookup
+    const userByEmail =
+      store.users.get(canonical) ||
+      store.users.get(clean) ||
+      (await this.getUserByEmail(canonical)) ||
+      (await this.getUserByEmail(clean));
+    if (userByEmail) return userByEmail;
+
+    // 2. Username lookup
+    const emailFromUsername = store.usersByUsername.get(clean);
+    if (emailFromUsername) {
+      const user = store.users.get(emailFromUsername) || (await this.getUserByEmail(emailFromUsername));
+      if (user) return user;
+    }
+
+    // 3. Phone lookup (strip spaces, normalize E.164)
+    const phoneNorm = canonicalizePhone(identifier);
+    const phoneKey = phoneNorm.isValid ? phoneNorm.e164 : identifier.trim().replace(/\s+/g, "");
+    const emailFromPhone =
+      store.usersByPhone.get(phoneKey) ||
+      store.usersByPhone.get(identifier.trim().replace(/\s+/g, ""));
+    if (emailFromPhone) {
+      const user = store.users.get(emailFromPhone) || (await this.getUserByEmail(emailFromPhone));
+      if (user) return user;
+    }
+
+    // 4. Fallback search across users
+    for (const u of store.users.values()) {
+      if (
+        (u.username && u.username.toLowerCase() === clean) ||
+        (u.phone && (u.phone === phoneKey || u.phone.replace(/\s+/g, "") === phoneKey.replace(/\s+/g, "")))
+      ) {
+        return u;
+      }
+    }
+
+    return null;
+  },
+
+  /**
+   * Registers a student with verified contact credentials and Argon2id password hash
+   */
+  async registerStudentWithArgon2(data: {
+    email: string;
+    phone?: string;
+    username: string;
+    name: string;
+    passwordHash: string;
+    college: string;
+    course: string;
+    branch: string;
+    year: number;
+    semester: number;
+  }): Promise<{ user: StoredUser; sessionId: string }> {
+    const existing = await this.getUserByEmail(data.email);
+    if (existing) {
+      throw new Error("An account with this email address already exists.");
+    }
+
+    const userId = `usr_${crypto.randomBytes(8).toString("hex")}`;
+    const newUser: StoredUser = {
+      id: userId,
+      name: data.name.trim(),
+      email: data.email.toLowerCase(),
+      username: data.username.toLowerCase(),
+      phone: data.phone,
+      passwordHash: data.passwordHash,
+      role: "USER",
+      college: data.college.trim(),
+      course: data.course.trim(),
+      branch: data.branch.trim(),
+      year: data.year,
+      semester: data.semester,
+      emailVerified: true,
+      phoneVerified: Boolean(data.phone),
+      createdAt: new Date(),
+    };
+
+    store.users.set(newUser.email, newUser);
+    store.usersByUsername.set(newUser.username!, newUser.email);
+    if (newUser.phone) {
+      const phoneClean = newUser.phone.replace(/\s+/g, "");
+      store.usersByPhone.set(phoneClean, newUser.email);
+      const phoneNorm = canonicalizePhone(newUser.phone);
+      if (phoneNorm.isValid) {
+        store.usersByPhone.set(phoneNorm.e164, newUser.email);
+      }
+    }
+    store.saveUsersToDisk();
+
+    // Database persistence if available
+    try {
+      if (await isDbConnected()) {
+        await prisma.user.create({
+          data: {
+            id: newUser.id,
+            email: newUser.email,
+            passwordHash: newUser.passwordHash,
+            role: newUser.role,
+            emailVerified: true,
+            profile: {
+              create: {
+                name: newUser.name,
+                college: newUser.college,
+                course: newUser.course,
+                branch: newUser.branch,
+                year: newUser.year,
+                semester: newUser.semester,
+              },
+            },
+          },
+        });
+      }
+    } catch (err) {
+      console.warn("Prisma user creation fallback:", err);
+    }
+
+    const sessionId = `ses_${crypto.randomBytes(16).toString("hex")}`;
+    store.sessions.set(sessionId, {
+      id: sessionId,
+      userId: newUser.id,
+      createdAt: new Date(),
+    });
+
+    return { user: newUser, sessionId };
+  },
+
+  /**
+   * Transparently updates password hash (e.g. legacy bcrypt to Argon2id)
+   */
+  async updatePasswordHash(userId: string, newHash: string): Promise<void> {
+    for (const u of store.users.values()) {
+      if (u.id === userId) {
+        u.passwordHash = newHash;
+        store.saveUsersToDisk();
+        break;
+      }
+    }
+
+    try {
+      if (await isDbConnected()) {
+        await prisma.user.update({
+          where: { id: userId },
+          data: { passwordHash: newHash },
+        });
+      }
+    } catch {
+      // Ignore offline error
+    }
+  },
+
+  /**
+   * Records a trusted device hash for a student
+   */
+  saveTrustedDevice(userId: string, tokenHash: string): void {
+    const devices = store.trustedDevices.get(userId) || [];
+    devices.push({ tokenHash, createdAt: new Date() });
+    store.trustedDevices.set(userId, devices);
+  },
+
+  /**
+   * Verifies if a raw device cookie is recognized and trusted
+   */
+  isDeviceTokenTrusted(userId: string, rawToken: string): boolean {
+    const devices = store.trustedDevices.get(userId) || [];
+    for (const dev of devices) {
+      if (verifyDeviceToken(rawToken, dev.tokenHash)) {
+        return true;
+      }
+    }
+    return false;
+  },
+
   /**
    * Registers a new student account and persists across server reloads and devices.
    */
@@ -642,14 +831,16 @@ export const AuthService = {
   async getUserByEmail(email: string): Promise<StoredUser | null> {
     await store.ensureReady();
     const normalized = email.toLowerCase().trim();
+    const canonical = normalized.includes("@") ? canonicalizeEmail(normalized) : normalized;
 
     // 1. Check in-memory map
-    const cached = store.users.get(normalized);
+    const cached = store.users.get(canonical) || store.users.get(normalized);
     if (cached) return cached;
 
     // 2. Check persistent disk file (survives dev server reloads)
-    const diskUser = store.loadUserFromDisk(normalized);
+    const diskUser = store.loadUserFromDisk(canonical) || store.loadUserFromDisk(normalized);
     if (diskUser) {
+      store.users.set(canonical, diskUser);
       store.users.set(normalized, diskUser);
       return diskUser;
     }
@@ -657,8 +848,10 @@ export const AuthService = {
     // 3. Check Database if connected
     try {
       if (await isDbConnected()) {
-        const dbUser = await prisma.user.findUnique({
-          where: { email: normalized },
+        const dbUser = await prisma.user.findFirst({
+          where: {
+            OR: [{ email: canonical }, { email: normalized }],
+          },
           include: { profile: true },
         });
         if (dbUser) {

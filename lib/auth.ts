@@ -67,27 +67,35 @@ export async function setSessionCookie(
   token: string,
   durationSeconds: number = SESSION_DURATION_DEFAULT
 ): Promise<void> {
-  const cookieStore = await cookies();
-  const isHttps =
-    (process.env.NEXT_PUBLIC_APP_URL?.startsWith("https://") ?? false) ||
-    Boolean(process.env.VERCEL);
-  cookieStore.set(COOKIE_NAME, token, {
-    httpOnly: true,
-    // Enforce secure flag in production HTTPS, allow local development testing from mobile Wi-Fi
-    secure: process.env.NODE_ENV === "production" && isHttps,
-    sameSite: "lax",
-    path: "/",
-    maxAge: durationSeconds,
-  });
+  try {
+    const cookieStore = await cookies();
+    const isHttps =
+      (process.env.NEXT_PUBLIC_APP_URL?.startsWith("https://") ?? false) ||
+      Boolean(process.env.VERCEL);
+    cookieStore.set(COOKIE_NAME, token, {
+      httpOnly: true,
+      // Enforce secure flag in production HTTPS, allow local development testing from mobile Wi-Fi
+      secure: process.env.NODE_ENV === "production" && isHttps,
+      sameSite: "lax",
+      path: "/",
+      maxAge: durationSeconds,
+    });
+  } catch {
+    // Outside request store (e.g. testing)
+  }
 }
 
 /**
  * Clears the session cookie on logout.
  */
 export async function clearSessionCookie(): Promise<void> {
-  const cookieStore = await cookies();
-  cookieStore.delete(COOKIE_NAME);
-  cookieStore.delete("campusflow_session");
+  try {
+    const cookieStore = await cookies();
+    cookieStore.delete(COOKIE_NAME);
+    cookieStore.delete("campusflow_session");
+  } catch {
+    // Outside request store
+  }
 }
 
 /**

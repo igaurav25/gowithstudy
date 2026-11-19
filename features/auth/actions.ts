@@ -18,6 +18,8 @@ import {
 } from "@/lib/auth";
 import { redirect } from "next/navigation";
 
+export * from "./high-assurance-actions";
+
 export interface ActionResult<T = unknown> {
   success: boolean;
   message?: string;

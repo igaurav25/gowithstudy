@@ -18,8 +18,6 @@ import {
 } from "@/lib/auth";
 import { redirect } from "next/navigation";
 
-export * from "./high-assurance-actions";
-
 export interface ActionResult<T = unknown> {
   success: boolean;
   message?: string;
@@ -149,23 +147,73 @@ export async function loginAction(
 
 /**
  * Handles seamless Google / Gmail login and auto-registration.
- * Once a student signs in with Gmail on desktop or mobile, their session is permanently saved.
+ * Verifies server-side Google OAuth ID token when provided, or checks dev bypass flag.
  */
 export async function googleSignInAction(params: {
-  email: string;
+  idToken?: string;
+  email?: string;
   name?: string;
   avatarUrl?: string;
 }): Promise<ActionResult<{ email: string; name: string; redirectUrl: string }>> {
   try {
-    const email = params.email.trim().toLowerCase();
-    if (!email || !email.includes("@")) {
-      return { success: false, message: "Please provide a valid Gmail address." };
+    if (process.env.AUTH_ENABLE_GOOGLE_SIGNIN === "false") {
+      return { success: false, message: "Google Sign-In is currently disabled by administrator." };
+    }
+
+    let verifiedEmail: string | undefined;
+    let verifiedName: string | undefined;
+    let verifiedAvatar: string | undefined;
+
+    // 1. If Google OAuth ID Token is provided, verify it with Google OAuth2 TokenInfo API
+    if (params.idToken) {
+      try {
+        const verifyRes = await fetch(
+          `https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(params.idToken)}`
+        );
+        if (!verifyRes.ok) {
+          return { success: false, message: "Invalid or expired Google OAuth token." };
+        }
+        const tokenPayload = (await verifyRes.json()) as {
+          email?: string;
+          email_verified?: string | boolean;
+          name?: string;
+          picture?: string;
+        };
+
+        const isEmailVerified =
+          tokenPayload.email_verified === "true" || tokenPayload.email_verified === true;
+        if (!tokenPayload.email || !isEmailVerified) {
+          return { success: false, message: "Google account email is unverified." };
+        }
+        verifiedEmail = tokenPayload.email.toLowerCase().trim();
+        verifiedName = tokenPayload.name || params.name;
+        verifiedAvatar = tokenPayload.picture || params.avatarUrl;
+      } catch {
+        return { success: false, message: "Unable to verify Google authentication token." };
+      }
+    } else {
+      // 2. Direct email simulation (Dev / Test only)
+      const isDevOrTest =
+        process.env.NODE_ENV !== "production" || process.env.AUTH_ALLOW_DEV_BYPASS === "true";
+      if (!isDevOrTest) {
+        return {
+          success: false,
+          message:
+            "Google OAuth ID token required in production. Direct email sign-in bypass is disabled.",
+        };
+      }
+      if (!params.email || !params.email.includes("@")) {
+        return { success: false, message: "Please provide a valid Gmail address." };
+      }
+      verifiedEmail = params.email.trim().toLowerCase();
+      verifiedName = params.name;
+      verifiedAvatar = params.avatarUrl;
     }
 
     const { user, sessionId, isNewUser } = await AuthService.googleAuth({
-      email,
-      name: params.name,
-      avatarUrl: params.avatarUrl,
+      email: verifiedEmail,
+      name: verifiedName,
+      avatarUrl: verifiedAvatar,
     });
 
     const duration = SESSION_DURATION_REMEMBER; // 60 days

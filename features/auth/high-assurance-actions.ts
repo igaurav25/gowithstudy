@@ -28,7 +28,8 @@ import {
   SESSION_DURATION_REMEMBER,
   SESSION_DURATION_DEFAULT,
 } from "@/lib/auth";
-import { ActionResult } from "@/features/auth/actions";
+import type { ActionResult } from "@/features/auth/actions";
+export type { ActionResult };
 
 const DEVICE_COOKIE_NAME = "gowithstudy_device";
 

@@ -27,6 +27,7 @@ import {
   ShieldCheck,
   LogOut,
   GraduationCap,
+  Award,
 } from "lucide-react";
 
 interface MobileMenuDrawerProps {
@@ -59,6 +60,7 @@ export function MobileMenuDrawer({ session }: MobileMenuDrawerProps) {
       links: [
         { label: "Overview", href: "/dashboard", icon: LayoutDashboard },
         { label: "Lecture Notes", href: "/dashboard/notes", icon: FileText },
+        { label: "PYQs (Exam Papers)", href: "/dashboard/pyqs", icon: Award },
         { label: "Syllabus Tracker", href: "/dashboard/syllabus", icon: BookOpen },
         { label: "Weekly Timetable", href: "/dashboard/timetable", icon: Calendar },
         { label: "Attendance & 75% Guard", href: "/dashboard/attendance", icon: ShieldCheck },

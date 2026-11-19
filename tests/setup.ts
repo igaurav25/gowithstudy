@@ -16,3 +16,9 @@ vi.mock("@/lib/prisma", () => {
     prisma: new Proxy({}, handler),
   };
 });
+
+// Mock Next.js Google Fonts in Vitest
+vi.mock("next/font/google", () => ({
+  Geist: () => ({ variable: "--font-geist-sans" }),
+  Geist_Mono: () => ({ variable: "--font-geist-mono" }),
+}));

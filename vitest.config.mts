@@ -9,10 +9,11 @@ export default defineConfig({
     environment: "node",
     globals: true,
     setupFiles: ["./tests/setup.ts"],
+    include: ["tests/**/*.test.ts"],
     env: {
-      DATABASE_URL: "postgresql://test_user:test_password@localhost:5432/campusflow_test",
-      AUTH_SECRET: "campusflow-super-secure-dev-session-key-32chars",
-      SESSION_COOKIE_NAME: "campusflow_session",
+      DATABASE_URL: "postgresql://test_user:test_password@localhost:5432/gowithstudy_test",
+      AUTH_SECRET: "gowithstudy-super-secure-dev-session-key-32chars",
+      SESSION_COOKIE_NAME: "gowithstudy_session",
     },
   },
   resolve: {

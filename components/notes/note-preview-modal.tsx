@@ -6,7 +6,6 @@ import { NoteItem } from "@/services/notes-service";
 import { NoteStatus, NOTE_STATUSES } from "@/schemas/notes";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { downloadNoteAsPDF, openNotePDFInNewTab } from "@/lib/pdf-generator";
 import {
   X,
   FileText,
@@ -65,10 +64,11 @@ export function NotePreviewModal({
     return `${Math.round(bytes / 1024)} KB`;
   };
 
-  // Real client-side Clean PDF download handler
-  const handleDownloadPDF = () => {
+  // Real client-side Clean PDF download handler (dynamically imported for performance)
+  const handleDownloadPDF = async () => {
     setIsExportingPDF(true);
     try {
+      const { downloadNoteAsPDF } = await import("@/lib/pdf-generator");
       downloadNoteAsPDF(note);
       setDownloadSuccess(true);
       setTimeout(() => setDownloadSuccess(false), 3000);
@@ -80,8 +80,13 @@ export function NotePreviewModal({
   };
 
   // Open PDF in new browser tab for clean full-screen reading or printing
-  const handleOpenPDFInNewTab = () => {
-    openNotePDFInNewTab(note);
+  const handleOpenPDFInNewTab = async () => {
+    try {
+      const { openNotePDFInNewTab } = await import("@/lib/pdf-generator");
+      openNotePDFInNewTab(note);
+    } catch (err) {
+      console.error("PDF preview error:", err);
+    }
   };
 
   return (

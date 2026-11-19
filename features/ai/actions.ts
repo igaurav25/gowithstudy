@@ -1,6 +1,7 @@
 "use server";
 
 import { getSession } from "@/lib/auth";
+import { checkRateLimit } from "@/lib/rate-limit";
 import { AIService } from "@/services/ai-service";
 import { AIMessage } from "@/lib/rag/types";
 import {
@@ -20,6 +21,14 @@ export async function askAssistantAction(
   const session = await getSession();
   if (!session) {
     return { success: false, message: "Unauthorized. Please sign in." };
+  }
+
+  const rateLimit = checkRateLimit(session.userId, "AI");
+  if (!rateLimit.success) {
+    return {
+      success: false,
+      message: "Free AI query limit reached. Please wait a moment before sending another prompt.",
+    };
   }
 
   const validation = askQuestionSchema.safeParse(input);
@@ -55,6 +64,14 @@ export async function generateQuizAction(
     return { success: false, message: "Unauthorized. Please sign in." };
   }
 
+  const rateLimit = checkRateLimit(session.userId, "AI");
+  if (!rateLimit.success) {
+    return {
+      success: false,
+      message: "Free AI query limit reached. Please wait a moment before sending another prompt.",
+    };
+  }
+
   const validation = generateQuizSchema.safeParse({ noteId });
   if (!validation.success) {
     return {
@@ -86,6 +103,14 @@ export async function generateSummaryAction(
   const session = await getSession();
   if (!session) {
     return { success: false, message: "Unauthorized. Please sign in." };
+  }
+
+  const rateLimit = checkRateLimit(session.userId, "AI");
+  if (!rateLimit.success) {
+    return {
+      success: false,
+      message: "Free AI query limit reached. Please wait a moment before sending another prompt.",
+    };
   }
 
   const validation = generateSummarySchema.safeParse({ noteId });

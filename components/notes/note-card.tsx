@@ -16,11 +16,8 @@ import {
   CheckCircle2,
   Clock,
   BookOpen,
-  ArrowUpRight,
-  MoreVertical,
   FileDown,
 } from "lucide-react";
-import { downloadNoteAsPDF } from "@/lib/pdf-generator";
 
 interface NoteCardProps {
   note: NoteItem;
@@ -41,6 +38,16 @@ export function NoteCard({
 }: NoteCardProps) {
   const [isChangingStatus, setIsChangingStatus] = React.useState(false);
   const [showConfirmDelete, setShowConfirmDelete] = React.useState(false);
+
+  const handleDownloadPDF = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      const { downloadNoteAsPDF } = await import("@/lib/pdf-generator");
+      downloadNoteAsPDF(note);
+    } catch (err) {
+      console.error("Failed to generate PDF:", err);
+    }
+  };
 
   // Format file size
   const formatSize = (bytes: number | null) => {
@@ -187,7 +194,7 @@ export function NoteCard({
           <Button
             size="sm"
             variant="ghost"
-            onClick={() => downloadNoteAsPDF(note)}
+            onClick={handleDownloadPDF}
             className="h-8 w-8 p-0 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/40"
             title="Download clean formatted PDF"
           >
@@ -365,7 +372,7 @@ export function NoteCard({
             <Button
               size="sm"
               variant="outline"
-              onClick={() => downloadNoteAsPDF(note)}
+              onClick={handleDownloadPDF}
               className="h-8 text-xs px-2 gap-1 border-red-200 dark:border-red-900/60 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40"
               title="Download clean formatted PDF"
             >

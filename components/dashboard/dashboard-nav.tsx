@@ -117,7 +117,7 @@ export function DashboardNav({
               variant="ghost"
               size="sm"
               type="submit"
-              aria-label="Log out of CampusFlow"
+              aria-label="Log out of GoWithStudy"
               title="Log out of account"
               className="p-2 h-9 w-9 text-zinc-500 hover:text-rose-600"
             >

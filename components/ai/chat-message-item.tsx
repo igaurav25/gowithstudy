@@ -280,7 +280,7 @@ export function ChatMessageItem({
               )}
             </div>
 
-            <span className="text-[10px] text-zinc-400">Grounded via CampusFlow RAG</span>
+            <span className="text-[10px] text-zinc-400">Grounded via GoWithStudy RAG</span>
           </div>
         )}
 

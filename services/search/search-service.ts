@@ -257,7 +257,7 @@ export class UniversalSearchService {
       )
       .join("\n\n");
 
-    const systemPrompt = `You are CampusFlow Universal AI Search, an academic and technical search engine for college students.
+    const systemPrompt = `You are GoWithStudy Universal AI Search, an academic and technical search engine for college students.
 User Intent: ${intent}.
 Detected Language: ${language} (If Hindi or Hinglish, explain naturally in that language while preserving technical terms like CPU, Semaphore, ACID, etc.).
 
@@ -316,12 +316,12 @@ ${conflicts.length > 0 ? `Known source nuances:\n${conflicts.join("\n")}` : ""}`
       if (isHinglish) {
         return `### ⚠️ Is query ke liye verified sources nahi mile\n\nHumne aapke query "**${rawQuery}**" ke liye live web aur course documents check kiye, lekin koi authoritative reference nahi mila. Kisi bhi galat jankari se bachne ke liye, hum fabricated facts provide nahi karte.\n\n* **Koshish karein:** Query ko thoda specifically rephrase karein ya official keywords add karein.`;
       }
-      return `### ⚠️ No Verified Sources Found\n\nWe searched your course documents and live sources for "**${rawQuery}**", but could not find authoritative primary references. To preserve factual accuracy, CampusFlow does not invent unverified facts.\n\n* **Suggestion:** Try rephrasing your question with specific technical keywords, subject names, or company terms.`;
+      return `### ⚠️ No Verified Sources Found\n\nWe searched your course documents and live sources for "**${rawQuery}**", but could not find authoritative primary references. To preserve factual accuracy, GoWithStudy does not invent unverified facts.\n\n* **Suggestion:** Try rephrasing your question with specific technical keywords, subject names, or company terms.`;
     }
 
     // 2. Build Sourced Facts Section from Citations
     const sourcedEvidenceList = citations.slice(0, 3).map((c, i) => {
-      const typeLabel = c.sourceType === "DOCUMENT_RAG" ? "📄 Course Material" : c.sourceType === "LIVE_WEB" ? "🌐 Live Web" : "🏫 CampusFlow";
+      const typeLabel = c.sourceType === "DOCUMENT_RAG" ? "📄 Course Material" : c.sourceType === "LIVE_WEB" ? "🌐 Live Web" : "🏫 GoWithStudy";
       return `* **[${i + 1}] ${typeLabel}:** *${c.title}* — "${c.snippet.slice(0, 160)}..."`;
     }).join("\n");
 

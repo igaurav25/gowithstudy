@@ -143,7 +143,7 @@ export function UniversalSearchView({ initialQuery = "", targetNoteId = "ALL" }:
         return (
           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-violet-500/10 text-violet-600 dark:text-violet-400 border border-violet-500/20">
             <Building2 className="w-2.5 h-2.5" />
-            CampusFlow
+            GoWithStudy
           </span>
         );
       default:
@@ -165,7 +165,7 @@ export function UniversalSearchView({ initialQuery = "", targetNoteId = "ALL" }:
           <span>Universal AI Search • Multi-Source & Multilingual</span>
         </div>
         <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-zinc-900 dark:text-zinc-50">
-          Ask CampusFlow
+          Ask GoWithStudy
         </h1>
         <p className="text-sm text-zinc-600 dark:text-zinc-400 max-w-xl mx-auto">
           Type natural-language questions in English, Hindi, or Hinglish. Automatically cross-references your course notes, accredited syllabus, and live web research.
@@ -238,7 +238,7 @@ export function UniversalSearchView({ initialQuery = "", targetNoteId = "ALL" }:
             <div className="w-6 h-6 rounded-full border-2 border-indigo-600 border-t-transparent animate-spin flex-shrink-0" />
             <div className="space-y-1">
               <p className="text-sm font-semibold text-indigo-900 dark:text-indigo-200">
-                {searchStep || "CampusFlow Universal AI Search is researching..."}
+                {searchStep || "GoWithStudy Universal AI Search is researching..."}
               </p>
               <p className="text-xs text-indigo-600/80 dark:text-indigo-400/80">
                 Cross-checking course curriculum, primary documentation, and authoritative web sources.
@@ -368,7 +368,7 @@ export function UniversalSearchView({ initialQuery = "", targetNoteId = "ALL" }:
                     </div>
 
                     <div className="mt-3 pt-2 border-t border-zinc-200/50 dark:border-zinc-800 flex items-center justify-between text-[11px] text-zinc-500">
-                      <span>{citation.domain || (citation.pageNumber ? `Page ${citation.pageNumber}` : "CampusFlow")}</span>
+                      <span>{citation.domain || (citation.pageNumber ? `Page ${citation.pageNumber}` : "GoWithStudy")}</span>
                       {citation.url && (
                         <a
                           href={citation.url}

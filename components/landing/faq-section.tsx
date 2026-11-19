@@ -11,7 +11,7 @@ export function LandingFAQSection() {
   const faqs = [
     {
       q: "How does the AI Study Assistant answer questions from my PDFs?",
-      a: "GoWithStudy uses Retrieval-Augmented Generation (RAG). When you upload a lecture PDF, our pipeline extracts the text, segments it into semantic chunks, and creates vector embeddings. When you ask a question, the system finds the most relevant passages from your document and feeds them into the AI model, producing accurate answers with exact page numbers.",
+      a: "GoWithStudy uses Retrieval-Augmented Generation (RAG). When you upload a lecture PDF, our pipeline extracts the text, segments it into semantic chunks, and indexes it for contextual retrieval. When you ask a question, the assistant retrieves the most relevant passages from your course material and grounds its answers directly in your notes with page citations.",
     },
     {
       q: "Is my personal data and job application tracker kept private?",

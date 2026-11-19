@@ -3,10 +3,8 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import {
   Sparkles,
   FileCheck2,
-  Database,
   Search,
   BookOpenCheck,
-  CheckCircle2,
 } from "lucide-react";
 
 export function LandingAIShowcase() {
@@ -25,7 +23,7 @@ export function LandingAIShowcase() {
     },
     {
       type: "Verified College Information",
-      desc: "Official academic notices, exam dates, and policies are strictly served from verified college records — never halluncinated.",
+      desc: "Official academic notices, exam dates, and policies are strictly served from verified college records — never hallucinated.",
       badge: "Verified Truth",
       badgeColor: "outline",
     },

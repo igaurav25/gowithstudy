@@ -79,7 +79,7 @@ export function CreatePostModal({
                 New Discussion or Doubt
               </h3>
               <p className="text-xs text-zinc-500">
-                Post to CampusFlow student community & get peer answers
+                Post to GoWithStudy student community & get peer answers
               </p>
             </div>
           </div>

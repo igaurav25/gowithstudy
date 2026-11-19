@@ -123,7 +123,7 @@ export function ReportModal({
               Report Submitted
             </h4>
             <p className="text-xs text-zinc-500 max-w-sm mx-auto">
-              Thank you for keeping CampusFlow constructive. Our moderation team has been notified and will review this content.
+              Thank you for keeping GoWithStudy constructive. Our moderation team has been notified and will review this content.
             </p>
           </div>
         ) : (

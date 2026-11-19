@@ -268,7 +268,7 @@ export function NotePreviewModal({
 
             {/* Formatted Full Notes */}
             <div className="prose dark:prose-invert max-w-none space-y-4">
-              {renderFormattedLectureNotes(note.fullNotesText || "Detailed study notes available in CampusFlow Reader.")}
+              {renderFormattedLectureNotes(note.fullNotesText || "Detailed study notes available in GoWithStudy Reader.")}
             </div>
           </div>
         )}
@@ -316,7 +316,7 @@ export function NotePreviewModal({
               <div className="border-b-2 border-indigo-600 pb-4 flex justify-between items-start gap-4">
                 <div>
                   <p className="text-[10px] tracking-widest font-sans font-bold text-indigo-700 uppercase">
-                    CampusFlow Academic Study Material
+                    GoWithStudy Academic Study Material
                   </p>
                   <h1 className="text-2xl font-bold font-sans text-zinc-900 mt-1">
                     {note.title}
@@ -417,7 +417,7 @@ export function NotePreviewModal({
 
               {/* Document Footer */}
               <div className="pt-8 border-t border-zinc-200 flex justify-between items-center text-[10px] font-sans text-zinc-400">
-                <span>CampusFlow Verified Academic Repository</span>
+                <span>GoWithStudy Verified Academic Repository</span>
                 <span>Page 1 of Printable PDF • Educational Use Only</span>
               </div>
             </div>

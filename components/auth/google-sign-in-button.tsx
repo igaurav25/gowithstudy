@@ -14,7 +14,9 @@ interface GoogleSignInButtonProps {
 const subscribeNoop = () => () => {};
 function getRememberedEmailSnapshot(): string | null {
   try {
-    const stored = localStorage.getItem("campusflow_last_email");
+    const stored =
+      localStorage.getItem("gowithstudy_last_email") ||
+      localStorage.getItem("campusflow_last_email");
     return stored && stored.includes("@") ? stored : null;
   } catch {
     return null;
@@ -55,9 +57,9 @@ export function GoogleSignInButton({
       if (res.success && res.data) {
         setSuccessMsg(res.message || "Logged in successfully!");
         try {
-          localStorage.setItem("campusflow_last_email", res.data.email);
-          localStorage.setItem("campusflow_user_name", res.data.name);
-          localStorage.setItem("campusflow_logged_in", "true");
+          localStorage.setItem("gowithstudy_last_email", res.data.email);
+          localStorage.setItem("gowithstudy_user_name", res.data.name);
+          localStorage.setItem("gowithstudy_logged_in", "true");
         } catch {
           // ignore
         }

@@ -3,9 +3,9 @@ import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 import { UserSessionPayload } from "./rbac";
 
-const AUTH_SECRET = process.env.AUTH_SECRET || "campusflow-super-secure-dev-session-key-32chars";
+const AUTH_SECRET = process.env.AUTH_SECRET || "gowithstudy-super-secure-dev-session-key-32chars";
 const SECRET_KEY = new TextEncoder().encode(AUTH_SECRET);
-const COOKIE_NAME = process.env.SESSION_COOKIE_NAME || "campusflow_session";
+const COOKIE_NAME = process.env.SESSION_COOKIE_NAME || "gowithstudy_session";
 
 // 30 days default, 60 days if remember me is true (ensures mobile & desktop persistence)
 export const SESSION_DURATION_DEFAULT = 30 * 24 * 60 * 60; // 30 days in seconds
@@ -87,6 +87,7 @@ export async function setSessionCookie(
 export async function clearSessionCookie(): Promise<void> {
   const cookieStore = await cookies();
   cookieStore.delete(COOKIE_NAME);
+  cookieStore.delete("campusflow_session");
 }
 
 /**
@@ -95,7 +96,9 @@ export async function clearSessionCookie(): Promise<void> {
 export async function getSession(): Promise<UserSessionPayload | null> {
   try {
     const cookieStore = await cookies();
-    const token = cookieStore.get(COOKIE_NAME)?.value;
+    const token =
+      cookieStore.get(COOKIE_NAME)?.value ||
+      cookieStore.get("campusflow_session")?.value;
     if (!token) return null;
     return await verifySessionToken(token);
   } catch {

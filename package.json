@@ -1,7 +1,7 @@
 {
-  "name": "campusflow",
+  "name": "gowithstudy",
   "version": "1.0.0",
-  "description": "Production-grade unified student operating system and academic SaaS platform combining academics, AI-powered study assistant (RAG), DSA tracker, internship pipeline, and student community.",
+  "description": "Production-grade unified student operating system and academic SaaS platform combining academics, syllabus notes, AI study assistant, DSA tracker, internship pipeline, and student community.",
   "private": true,
   "scripts": {
     "dev": "next dev",

@@ -24,7 +24,7 @@ export function QuickActionsBar() {
   const actions = [
     {
       id: "universal_search",
-      label: "Ask CampusFlow",
+      label: "Ask GoWithStudy",
       icon: Search,
       color: "from-indigo-600 to-violet-600",
       description: "Universal AI Search across web, courses & syllabus with citations.",

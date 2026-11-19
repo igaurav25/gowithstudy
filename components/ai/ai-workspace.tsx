@@ -35,12 +35,12 @@ export function AIWorkspace({
   const [isLoading, setIsLoading] = React.useState(false);
   const [isStreaming, setIsStreaming] = React.useState(false);
 
-  // Initial welcome message from CampusFlow AI
+  // Initial welcome message from GoWithStudy AI
   const [messages, setMessages] = React.useState<AIMessage[]>([
     {
       id: "welcome_msg",
       role: "assistant",
-      content: `👋 Hello! I am your **CampusFlow AI Study Copilot** (ChatGPT-style with Document Grounding).
+      content: `👋 Hello! I am your **GoWithStudy AI Study Copilot** (ChatGPT-style with Document Grounding).
 
 I ground my responses directly in your accredited B.Tech CSE syllabus, lecture notes, and revision materials using Retrieval-Augmented Generation (RAG).
 
@@ -283,7 +283,7 @@ Select a document from the context dropdown or try one of the suggested prompts 
           <div>
             <div className="flex items-center gap-2">
               <h2 className="text-base font-bold text-zinc-900 dark:text-zinc-50">
-                CampusFlow AI Copilot
+                GoWithStudy AI Copilot
               </h2>
               <Badge variant="purple" className="text-[10px] hidden sm:inline-flex">
                 ChatGPT Stream

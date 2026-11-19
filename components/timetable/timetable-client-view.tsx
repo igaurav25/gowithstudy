@@ -79,17 +79,17 @@ export function TimetableClientView({
     const lines = [
       "BEGIN:VCALENDAR",
       "VERSION:2.0",
-      "PRODID:-//CampusFlow//Academic Timetable//EN",
+      "PRODID:-//GoWithStudy//Academic Timetable//EN",
       "CALSCALE:GREGORIAN",
       "METHOD:PUBLISH",
-      "X-WR-CALNAME:CampusFlow Timetable",
+      "X-WR-CALNAME:GoWithStudy Timetable",
     ];
 
     for (const c of classes) {
       const dayCode = icsDayMap[c.day] || "MO";
       lines.push(
         "BEGIN:VEVENT",
-        `UID:${c.id}@campusflow.edu`,
+        `UID:${c.id}@gowithstudy.app`,
         `RRULE:FREQ=WEEKLY;BYDAY=${dayCode}`,
         `SUMMARY:${c.subject} (${c.room || "Campus"})`,
         `DESCRIPTION:${c.faculty ? `Faculty: ${c.faculty}` : "Lecture Session"}`,
@@ -104,7 +104,7 @@ export function TimetableClientView({
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.setAttribute("download", "campusflow_timetable.ics");
+    link.setAttribute("download", "gowithstudy_timetable.ics");
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);

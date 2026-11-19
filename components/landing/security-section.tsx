@@ -1,5 +1,5 @@
 import { Badge } from "@/components/ui/badge";
-import { ShieldCheck, Lock, KeyRound, FileCheck, EyeOff, Shield } from "lucide-react";
+import { Lock, FileCheck, EyeOff, Shield } from "lucide-react";
 
 export function LandingSecuritySection() {
   const securityPillars = [
@@ -7,7 +7,7 @@ export function LandingSecuritySection() {
       icon: Lock,
       title: "Encrypted Sessions & Secure Cookies",
       description:
-        "Authentication tokens are never stored in localStorage where XSS can steal them. We enforce HttpOnly, SameSite strict cookies with server-side invalidation.",
+        "Authentication tokens are never stored in localStorage where XSS can steal them. We enforce HttpOnly, SameSite Lax cookies with server-side revocation.",
     },
     {
       icon: EyeOff,

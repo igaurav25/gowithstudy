@@ -4,9 +4,9 @@ import { jwtVerify, type JWTPayload } from "jose";
 import { checkRateLimit, getRateLimitHeaders } from "@/lib/rate-limit";
 import { validateSafeRedirect } from "@/lib/security";
 
-const AUTH_SECRET = process.env.AUTH_SECRET || "campusflow-super-secure-dev-session-key-32chars";
+const AUTH_SECRET = process.env.AUTH_SECRET || "gowithstudy-super-secure-dev-session-key-32chars";
 const SECRET_KEY = new TextEncoder().encode(AUTH_SECRET);
-const COOKIE_NAME = process.env.SESSION_COOKIE_NAME || "campusflow_session";
+const COOKIE_NAME = process.env.SESSION_COOKIE_NAME || "gowithstudy_session";
 
 // Helper function to append strict security headers to any outgoing response
 function applySecurityHeaders(res: NextResponse): NextResponse {
@@ -124,7 +124,9 @@ export async function proxy(request: NextRequest) {
   }
 
   // 5. Session Verification
-  const token = request.cookies.get(COOKIE_NAME)?.value;
+  const token =
+    request.cookies.get(COOKIE_NAME)?.value ||
+    request.cookies.get("campusflow_session")?.value;
   let session: (JWTPayload & { role?: string }) | null = null;
   if (token) {
     try {
@@ -162,6 +164,7 @@ export async function proxy(request: NextRequest) {
     if (searchParams.get("sessionExpired") === "1") {
       const response = NextResponse.next();
       response.cookies.delete(COOKIE_NAME);
+      response.cookies.delete("campusflow_session");
       return applySecurityHeaders(response);
     }
     return applySecurityHeaders(NextResponse.redirect(new URL("/dashboard", request.url)));

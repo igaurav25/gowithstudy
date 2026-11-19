@@ -14,7 +14,9 @@ import { GraduationCap, ArrowRight, Sparkles, User, ShieldCheck } from "lucide-r
 const subscribeNoop = () => () => {};
 function getStoredEmailSnapshot(): string {
   try {
-    const stored = localStorage.getItem("campusflow_last_email");
+    const stored =
+      localStorage.getItem("gowithstudy_last_email") ||
+      localStorage.getItem("campusflow_last_email");
     return stored && stored.includes("@") ? stored : "";
   } catch {
     return "";
@@ -45,8 +47,8 @@ export default function LoginPage() {
       setResult(res);
       if (res.success) {
         try {
-          localStorage.setItem("campusflow_last_email", enteredEmail);
-          localStorage.setItem("campusflow_logged_in", "true");
+          localStorage.setItem("gowithstudy_last_email", enteredEmail);
+          localStorage.setItem("gowithstudy_logged_in", "true");
         } catch {
           // ignore
         }
@@ -117,7 +119,7 @@ export default function LoginPage() {
               <div className="grid grid-cols-3 gap-1.5">
                 <button
                   type="button"
-                  onClick={() => fillDemo("student@campusflow.edu")}
+                  onClick={() => fillDemo("student@gowithstudy.app")}
                   className="p-1.5 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 text-xs font-medium hover:border-indigo-500 transition-colors flex items-center justify-center gap-1"
                 >
                   <User className="w-3 h-3 text-indigo-500" />
@@ -125,7 +127,7 @@ export default function LoginPage() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => fillDemo("moderator@campusflow.edu")}
+                  onClick={() => fillDemo("moderator@gowithstudy.app")}
                   className="p-1.5 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 text-xs font-medium hover:border-indigo-500 transition-colors flex items-center justify-center gap-1"
                 >
                   <Sparkles className="w-3 h-3 text-violet-500" />
@@ -133,7 +135,7 @@ export default function LoginPage() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => fillDemo("admin@campusflow.edu")}
+                  onClick={() => fillDemo("admin@gowithstudy.app")}
                   className="p-1.5 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 text-xs font-medium hover:border-indigo-500 transition-colors flex items-center justify-center gap-1"
                 >
                   <ShieldCheck className="w-3 h-3 text-emerald-500" />
@@ -164,7 +166,7 @@ export default function LoginPage() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="student@campusflow.edu"
+                  placeholder="student@gowithstudy.app"
                   required
                   error={result?.errors?.email}
                 />

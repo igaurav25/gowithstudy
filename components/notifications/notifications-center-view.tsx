@@ -616,7 +616,7 @@ export function NotificationsCenterView({
                   key: "pushEnabled",
                   icon: Smartphone,
                   label: "Browser Push Notifications",
-                  desc: "Push alerts even when the CampusFlow browser tab is closed.",
+                  desc: "Push alerts even when the GoWithStudy browser tab is closed.",
                 },
               ].map((item) => {
                 const Icon = item.icon;

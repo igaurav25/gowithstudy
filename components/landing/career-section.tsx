@@ -1,6 +1,7 @@
+import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Code2, Briefcase, CheckCircle2, TrendingUp, Sparkles, Building2 } from "lucide-react";
+import { Code2, Briefcase, CheckCircle2 } from "lucide-react";
 
 export function LandingCareerSection() {
   const dsaCategories = [
@@ -71,7 +72,12 @@ export function LandingCareerSection() {
                   <CheckCircle2 className="w-4 h-4 text-emerald-500" />
                   Blind 75 & Striver SDE sheet synced
                 </span>
-                <span className="font-semibold text-indigo-600 dark:text-indigo-400">View DSA Roadmap →</span>
+                <Link
+                  href="/login"
+                  className="font-semibold text-indigo-600 dark:text-indigo-400 hover:underline inline-flex items-center gap-1"
+                >
+                  View DSA Roadmap →
+                </Link>
               </div>
             </CardContent>
           </Card>
@@ -117,7 +123,12 @@ export function LandingCareerSection() {
               ))}
               <div className="pt-2 flex items-center justify-between text-xs text-zinc-500 border-t border-zinc-100 dark:border-zinc-800">
                 <span>Never miss an assessment or interview round again</span>
-                <span className="font-semibold text-indigo-600 dark:text-indigo-400">Manage Pipeline →</span>
+                <Link
+                  href="/login"
+                  className="font-semibold text-indigo-600 dark:text-indigo-400 hover:underline inline-flex items-center gap-1"
+                >
+                  Manage Pipeline →
+                </Link>
               </div>
             </CardContent>
           </Card>

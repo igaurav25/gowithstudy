@@ -98,7 +98,7 @@ export default function ForgotPasswordPage() {
                   <Input
                     name="email"
                     type="email"
-                    placeholder="student@campusflow.edu"
+                    placeholder="student@gowithstudy.app"
                     required
                     error={result?.errors?.email}
                   />

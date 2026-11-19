@@ -1,4 +1,4 @@
-# 🎓 CampusFlow — One Platform for Your College Life, Learning & Career
+# 🎓 GoWithStudy — The All-in-One Platform for College Life, Learning & Career
 
 [![Next.js 16](https://img.shields.io/badge/Next.js-16.3.6_(Turbopack)-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x_Strict-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
@@ -6,11 +6,11 @@
 [![Prisma ORM](https://img.shields.io/badge/Prisma-6.x-2D3748?style=for-the-badge&logo=prisma&logoColor=white)](https://www.prisma.io/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16_Alpine-336791?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
 [![Docker](https://img.shields.io/badge/Docker-Multi--Stage_Build-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com/)
-[![Vitest](https://img.shields.io/badge/Vitest-109_Tests_Passing-6E9F18?style=for-the-badge&logo=vitest&logoColor=white)](https://vitest.dev/)
+[![Vitest](https://img.shields.io/badge/Vitest-Automated_Testing-6E9F18?style=for-the-badge&logo=vitest&logoColor=white)](https://vitest.dev/)
 [![Caddy](https://img.shields.io/badge/Caddy-Auto_SSL_/_HTTP3-1F88C0?style=for-the-badge&logo=caddy&logoColor=white)](https://caddyserver.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
 
-> **CampusFlow** is an enterprise-grade, production-style student operating system and academic SaaS platform. It combines academic schedules, intelligent study repositories, an AI-powered study assistant with Retrieval-Augmented Generation (RAG) over user PDFs, DSA & placement tracking, an internship application pipeline, verified college notice boards, and student collaborative project matchmaking into a single, unified interface.
+> **GoWithStudy** is an all-in-one student operating system and academic SaaS platform. It combines academic schedules, intelligent study repositories, an AI-powered study assistant with citation grounding over lecture notes, DSA & placement tracking, an internship application pipeline, verified college notice boards, and student collaborative project matchmaking into a single, unified interface.
 
 ---
 
@@ -26,7 +26,7 @@
 - [Database Architecture (Prisma Schema)](#-database-architecture-prisma-schema)
 - [Quick Start & Local Setup](#-quick-start--local-setup)
 - [Docker Multi-Container Deployment](#-docker-multi-container-deployment)
-- [Automated Testing Suite (109 Tests)](#-automated-testing-suite-109-tests)
+- [Automated Testing Suite](#-automated-testing-suite)
 - [CI/CD Pipeline & DevOps](#-cicd-pipeline--devops)
 - [Resume & Technical Interview Highlights](#-resume--technical-interview-highlights)
 - [Roadmap](#-roadmap)
@@ -45,10 +45,10 @@ Engineering and college students constantly juggle 7+ disparate, disconnected to
 - **Internships & Jobs**: Logged in unmaintained Excel sheets without status tracking.
 - **College Notices**: Official announcements drown in spam and unverified rumors.
 
-### ✅ The CampusFlow Solution
-**CampusFlow** unifies the entire college lifecycle into a secure, responsive, modern SaaS ecosystem:
+### ✅ The GoWithStudy Solution
+**GoWithStudy** unifies the entire college lifecycle into a secure, responsive, modern SaaS ecosystem:
 - **Centralized Command**: A personalized student dashboard with real-time greetings, daily timetable, upcoming deadlines, and DSA streak analytics.
-- **Grounded AI Assistant**: In-browser academic help and RAG (Retrieval-Augmented Generation) querying uploaded lecture slides and notes with exact citation chips.
+- **Grounded AI Assistant**: In-browser academic help with semantic retrieval over notes and exact citation chips.
 - **Career Accelerators**: Dedicated DSA tracker across 12+ topics and a visual Kanban internship application pipeline.
 - **Collaborative Campus**: Project teammate finder, community forum with category filters, and verified official college notice repository.
 
@@ -308,8 +308,8 @@ erDiagram
 
 ### 1. Clone & Install
 ```bash
-git clone https://github.com/your-username/campusflow.git
-cd campusflow
+git clone https://github.com/igaurav25/gowithstudy.git
+cd gowithstudy
 npm install
 ```
 
@@ -427,5 +427,5 @@ If you are a student or developer discussing CampusFlow in a software engineerin
 
 <p align="center">
   <b>Built with ❤️ for students worldwide.</b><br/>
-  <sub>CampusFlow — One platform for your college life, learning and career.</sub>
+  <sub>GoWithStudy — One platform for your college life, learning and career.</sub>
 </p>

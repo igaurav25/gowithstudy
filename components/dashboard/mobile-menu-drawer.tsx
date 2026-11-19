@@ -28,6 +28,7 @@ import {
   LogOut,
   GraduationCap,
   Award,
+  Zap,
 } from "lucide-react";
 
 interface MobileMenuDrawerProps {
@@ -71,6 +72,7 @@ export function MobileMenuDrawer({ session }: MobileMenuDrawerProps) {
       title: "AI Study Tools",
       links: [
         { label: "AI Tutor & Practice", href: "/dashboard/tutor", icon: Bot },
+        { label: "AI Flashcards & Quizzes", href: "/dashboard/flashcards", icon: Zap },
         { label: "Ask AI Search", href: "/dashboard/search", icon: Search },
         { label: "AI Copilot Workspace", href: "/dashboard/ai", icon: Sparkles },
       ],

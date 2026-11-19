@@ -27,6 +27,7 @@ import {
   FileDown,
   Eye,
   Check,
+  Zap,
 } from "lucide-react";
 
 interface NotePreviewModalProps {
@@ -119,6 +120,19 @@ export function NotePreviewModal({
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
+            {/* Practice Flashcards Link */}
+            <Link href="/dashboard/flashcards">
+              <Button
+                size="sm"
+                variant="outline"
+                className="text-xs gap-1.5 hidden sm:flex border-indigo-200 dark:border-indigo-800 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/40"
+                title="Practice AI Flashcards and Exam Quiz for this subject"
+              >
+                <Zap className="w-3.5 h-3.5" />
+                <span>Practice Flashcards</span>
+              </Button>
+            </Link>
+
             {/* Download Clean PDF Button */}
             <Button
               size="sm"

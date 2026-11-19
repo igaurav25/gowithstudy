@@ -27,6 +27,7 @@ import {
   Search,
   Bot,
   Award,
+  Zap,
 } from "lucide-react";
 
 export function DashboardNav({
@@ -44,6 +45,7 @@ export function DashboardNav({
     { label: "AI Tutor", href: "/dashboard/tutor", icon: Bot },
     { label: "AI Copilot", href: "/dashboard/ai", icon: Sparkles },
     { label: "Notes", href: "/dashboard/notes", icon: FileText },
+    { label: "Flashcards", href: "/dashboard/flashcards", icon: Zap },
     { label: "PYQs", href: "/dashboard/pyqs", icon: Award },
     { label: "Syllabus", href: "/dashboard/syllabus", icon: BookOpen },
     { label: "Timetable", href: "/dashboard/timetable", icon: Calendar },

@@ -92,3 +92,11 @@ body {
   }
 }
 
+/* Mobile bottom nav safe padding for main containers on mobile viewports (<1024px) */
+@media (max-width: 1023px) {
+  main {
+    padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px)) !important;
+  }
+}
+
+

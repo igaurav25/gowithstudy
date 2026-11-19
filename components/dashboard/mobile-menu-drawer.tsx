@@ -61,6 +61,7 @@ export function MobileMenuDrawer({ session }: MobileMenuDrawerProps) {
         { label: "Lecture Notes", href: "/dashboard/notes", icon: FileText },
         { label: "Syllabus Tracker", href: "/dashboard/syllabus", icon: BookOpen },
         { label: "Weekly Timetable", href: "/dashboard/timetable", icon: Calendar },
+        { label: "Attendance & 75% Guard", href: "/dashboard/attendance", icon: ShieldCheck },
         { label: "Assignments & Deadlines", href: "/dashboard/assignments", icon: CheckSquare },
       ],
     },

@@ -1,4 +1,3 @@
-import { StoredUser, AuthService } from "@/services/auth-service";
 import { ProfileService, StudentProfileData } from "@/services/profile-service";
 import { UserSessionPayload } from "@/lib/rbac";
 import { NotesService } from "@/services/notes-service";
@@ -7,6 +6,7 @@ import { AssignmentsService } from "@/services/assignments-service";
 import { DSAService } from "@/services/dsa-service";
 import { InternshipsService } from "@/services/internships-service";
 import { NotificationsService } from "@/services/notifications-service";
+import { AttendanceService } from "@/services/attendance-service";
 
 export interface ClassScheduleItem {
   id: string;
@@ -129,10 +129,11 @@ export const DashboardService = {
       pages: Math.max(8, Math.round((n.fileSize || 2500000) / 120000)),
     }));
 
-    const [dsaStats, internshipStats, rawNotifications] = await Promise.all([
+    const [dsaStats, internshipStats, rawNotifications, attendanceRate] = await Promise.all([
       DSAService.getDSAStats(userId),
       InternshipsService.getInternshipStats(userId),
       NotificationsService.getNotifications(userId),
+      AttendanceService.getOverallPercentage(userId),
     ]);
 
     const formatRelativeTime = (isoString: string) => {
@@ -163,7 +164,7 @@ export const DashboardService = {
     return {
       greeting: this.getGreeting(profile.name),
       student: profile,
-      attendanceRate: 88,
+      attendanceRate,
       assignmentCompletionRate: Math.round(assignmentStats.completionRate) || 92,
       studyStreakDays: dsaStats.streakDays,
       dsaSolvedCount: dsaStats.totalSolved,

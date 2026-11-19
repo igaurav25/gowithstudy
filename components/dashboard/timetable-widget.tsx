@@ -3,6 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { ClassScheduleItem } from "@/services/dashboard-service";
+import { markAttendanceAction } from "@/features/attendance/actions";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -25,10 +26,25 @@ export function TimetableWidget({ classes }: { classes: ClassScheduleItem[] }) {
   const [attendanceState, setAttendanceState] = React.useState<Record<string, "PRESENT" | "ABSENT">>({});
   const [toastMessage, setToastMessage] = React.useState<string | null>(null);
 
-  const handleMarkAttendance = (id: string, status: "PRESENT" | "ABSENT") => {
+  const handleMarkAttendance = async (
+    id: string,
+    status: "PRESENT" | "ABSENT",
+    subject?: string
+  ) => {
     setAttendanceState((prev) => ({ ...prev, [id]: status }));
-    const msg = status === "PRESENT" ? "Attendance marked: Present ✅" : "Attendance marked: Absent ❌";
+    const msg =
+      status === "PRESENT"
+        ? "Attendance marked: Present ✅"
+        : "Attendance marked: Absent ❌";
     setToastMessage(msg);
+
+    if (subject) {
+      try {
+        await markAttendanceAction({ subject, status });
+      } catch {
+        // Silently preserve client state
+      }
+    }
     setTimeout(() => setToastMessage(null), 3500);
   };
 
@@ -48,9 +64,13 @@ export function TimetableWidget({ classes }: { classes: ClassScheduleItem[] }) {
                 </CardDescription>
               </div>
             </div>
-            <Badge variant="purple" className="text-[11px]">
-              Interactive
-            </Badge>
+            <Link
+              href="/dashboard/attendance"
+              className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-0.5"
+            >
+              <span>75% Bunk Guard</span>
+              <ChevronRight className="w-3.5 h-3.5" />
+            </Link>
           </div>
         </CardHeader>
 
@@ -218,7 +238,7 @@ export function TimetableWidget({ classes }: { classes: ClassScheduleItem[] }) {
                 <Button
                   size="sm"
                   variant={attendanceState[selectedClass.id] === "PRESENT" ? "default" : "outline"}
-                  onClick={() => handleMarkAttendance(selectedClass.id, "PRESENT")}
+                  onClick={() => handleMarkAttendance(selectedClass.id, "PRESENT", selectedClass.subject)}
                   className={`text-xs gap-1.5 ${
                     attendanceState[selectedClass.id] === "PRESENT"
                       ? "bg-emerald-600 hover:bg-emerald-700 text-white"
@@ -232,7 +252,7 @@ export function TimetableWidget({ classes }: { classes: ClassScheduleItem[] }) {
                 <Button
                   size="sm"
                   variant={attendanceState[selectedClass.id] === "ABSENT" ? "default" : "outline"}
-                  onClick={() => handleMarkAttendance(selectedClass.id, "ABSENT")}
+                  onClick={() => handleMarkAttendance(selectedClass.id, "ABSENT", selectedClass.subject)}
                   className={`text-xs gap-1.5 ${
                     attendanceState[selectedClass.id] === "ABSENT"
                       ? "bg-rose-600 hover:bg-rose-700 text-white"

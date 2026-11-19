@@ -45,6 +45,7 @@ export function DashboardNav({
     { label: "Notes", href: "/dashboard/notes", icon: FileText },
     { label: "Syllabus", href: "/dashboard/syllabus", icon: BookOpen },
     { label: "Timetable", href: "/dashboard/timetable", icon: Calendar },
+    { label: "Attendance", href: "/dashboard/attendance", icon: ShieldCheck },
     { label: "Assignments", href: "/dashboard/assignments", icon: CheckSquare },
     { label: "DSA", href: "/dashboard/placement", icon: Code2 },
     { label: "Internships", href: "/dashboard/internships", icon: Briefcase },

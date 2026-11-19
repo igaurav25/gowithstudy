@@ -1,6 +1,6 @@
 import { ImageResponse } from "next/og";
 
-export const runtime = "edge";
+export const runtime = "nodejs";
 export const alt = "GoWithStudy — Your All-in-One College Life, Study & Career Platform";
 export const size = {
   width: 1200,

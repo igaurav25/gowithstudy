@@ -1,24 +1,20 @@
 import { getSession } from "@/lib/auth";
 import { DashboardService } from "@/services/dashboard-service";
+import { ExamTimerService } from "@/services/exam-timer-service";
 import { DashboardNav } from "@/components/dashboard/dashboard-nav";
 import { QuickActionsBar } from "@/components/dashboard/quick-actions";
 import { TimetableWidget } from "@/components/dashboard/timetable-widget";
 import { AssignmentsWidget } from "@/components/dashboard/assignments-widget";
 import { CareerDSAWidget } from "@/components/dashboard/career-dsa-widget";
 import { RecentNotesWidget } from "@/components/dashboard/recent-notes-widget";
+import { ExamCountdownWidget } from "@/components/dashboard/exam-countdown-widget";
+import { PomodoroFocusWidget } from "@/components/dashboard/pomodoro-focus-widget";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import {
-  Sparkles,
   Flame,
   CheckCircle2,
-  Calendar,
-  Clock,
-  ArrowRight,
-  TrendingUp,
   Percent,
 } from "lucide-react";
-import Link from "next/link";
 import { redirect } from "next/navigation";
 
 export default async function DashboardPage() {
@@ -28,7 +24,11 @@ export default async function DashboardPage() {
     redirect("/login");
   }
 
-  const data = await DashboardService.getDashboardData(session.userId, session);
+  const [data, exams] = await Promise.all([
+    DashboardService.getDashboardData(session.userId, session),
+    Promise.resolve(ExamTimerService.getExams(session.userId)),
+  ]);
+
   if (!data) {
     redirect("/login?sessionExpired=1");
   }
@@ -105,6 +105,9 @@ export default async function DashboardPage() {
         <section className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
           {/* Left Column */}
           <div className="space-y-8">
+            {/* Exam Countdown & Syllabus Readiness */}
+            <ExamCountdownWidget initialExams={exams} />
+
             {/* Today's Timetable Widget */}
             <TimetableWidget classes={data.todayClasses} />
 
@@ -114,6 +117,9 @@ export default async function DashboardPage() {
 
           {/* Right Column */}
           <div className="space-y-8">
+            {/* Hostel Pomodoro & Deep Work Focus Timer */}
+            <PomodoroFocusWidget />
+
             {/* Upcoming Assignments Deadline Tracker */}
             <AssignmentsWidget initialAssignments={data.upcomingAssignments} />
 

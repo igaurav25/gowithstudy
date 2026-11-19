@@ -1,4 +1,4 @@
-name: campusflow
+name: gowithstudy
 
 services:
   # Next.js Full-Stack Application
@@ -6,16 +6,16 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: campusflow-web
+    container_name: gowithstudy-web
     restart: unless-stopped
     ports:
       - "3000:3000"
     environment:
       - NODE_ENV=production
       - PORT=3000
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-campusflow_secure_password}@db:5432/${POSTGRES_DB:-campusflow}?schema=public
-      - AUTH_SECRET=${AUTH_SECRET:-campusflow-super-secure-dev-session-key-32chars}
-      - SESSION_COOKIE_NAME=${SESSION_COOKIE_NAME:-campusflow_session}
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-gowithstudy_secure_password}@db:5432/${POSTGRES_DB:-gowithstudy}?schema=public
+      - AUTH_SECRET=${AUTH_SECRET:-gowithstudy-super-secure-dev-session-key-32chars}
+      - SESSION_COOKIE_NAME=${SESSION_COOKIE_NAME:-gowithstudy_session}
       - NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
       - REDIS_URL=redis://redis:6379
     depends_on:
@@ -24,49 +24,49 @@ services:
       redis:
         condition: service_started
     networks:
-      - campusflow-network
+      - gowithstudy-network
 
   # PostgreSQL 16 Relational Database
   db:
     image: postgres:16-alpine
-    container_name: campusflow-db
+    container_name: gowithstudy-db
     restart: unless-stopped
     ports:
       - "5432:5432"
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-campusflow_secure_password}
-      POSTGRES_DB: ${POSTGRES_DB:-campusflow}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-gowithstudy_secure_password}
+      POSTGRES_DB: ${POSTGRES_DB:-gowithstudy}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-campusflow}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-gowithstudy}"]
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 10s
     networks:
-      - campusflow-network
+      - gowithstudy-network
 
   # Redis In-Memory Cache & Session Store
   redis:
     image: redis:7-alpine
-    container_name: campusflow-redis
+    container_name: gowithstudy-redis
     restart: unless-stopped
     ports:
       - "6379:6379"
     volumes:
       - redis_data:/data
     networks:
-      - campusflow-network
+      - gowithstudy-network
 
 volumes:
   postgres_data:
-    name: campusflow_postgres_data
+    name: gowithstudy_postgres_data
   redis_data:
-    name: campusflow_redis_data
+    name: gowithstudy_redis_data
 
 networks:
-  campusflow-network:
-    name: campusflow-network
+  gowithstudy-network:
+    name: gowithstudy-network
     driver: bridge

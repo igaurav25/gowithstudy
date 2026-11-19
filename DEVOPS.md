@@ -1,27 +1,27 @@
-# 🚀 CampusFlow — DevOps, Containerization & Production Runbook
+# 🚀 GoWithStudy — DevOps, Containerization & Production Runbook
 
-This document is the definitive operational guide for containerizing, testing, deploying, and maintaining **CampusFlow** in local development, continuous integration (CI/CD), and enterprise production environments.
+This document is the definitive operational guide for containerizing, testing, deploying, and maintaining **GoWithStudy** in local development, continuous integration (CI/CD), and enterprise production environments.
 
 ---
 
 ## 1. System Architecture
 
-CampusFlow uses an isolated containerized stack orchestrated via Docker Compose, fronted by a Caddy reverse proxy with automated TLS encryption.
+GoWithStudy uses an isolated containerized stack orchestrated via Docker Compose, fronted by a Caddy reverse proxy with automated TLS encryption.
 
 ```mermaid
 graph TD
     User([🌐 End User / Browser]) -->|HTTPS:443 / HTTP:80| Caddy[🛡️ Caddy Reverse Proxy<br/>Auto Let's Encrypt SSL / HTTP/3]
     
-    subgraph CampusFlow Internal Network [Internal Docker Bridge Network]
+    subgraph GoWithStudy Internal Network [Internal Docker Bridge Network]
         Caddy -->|Reverse Proxy:3000| Web[⚡ Next.js 16 Standalone Server<br/>Node.js 22 Alpine • Non-root 'nextjs']
         Web -->|Port 5432| DB[(🐘 PostgreSQL 16<br/>Relational Data Store)]
         Web -->|Port 6379| Redis[(⚡ Redis 7 Alpine<br/>Rate Limiting & Session Cache)]
     end
 
     subgraph Persistent Storage
-        DB --- VolDB[(campusflow_postgres_data)]
-        Redis --- VolRedis[(campusflow_redis_data)]
-        Caddy --- VolSSL[(campusflow_caddy_data)]
+        DB --- VolDB[(gowithstudy_postgres_data)]
+        Redis --- VolRedis[(gowithstudy_redis_data)]
+        Caddy --- VolSSL[(gowithstudy_caddy_data)]
     end
 ```
 
@@ -30,7 +30,7 @@ graph TD
 ## 2. Docker Containerization Strategy
 
 ### 2.1 Multi-Stage `Dockerfile`
-CampusFlow employs a 4-stage multi-stage Docker build to achieve minimal attack surface, optimal layer caching, and a featherweight image footprint (~150MB):
+GoWithStudy employs a 4-stage multi-stage Docker build to achieve minimal attack surface, optimal layer caching, and a featherweight image footprint (~150MB):
 
 1. **Stage 1: `base` (`node:22-alpine`)**
    - Installs minimal Alpine C runtime compatibility (`libc6-compat`).
@@ -68,14 +68,14 @@ Prevents local artifacts, secrets, and test fixtures from polluting build contex
 ### Key Production Variables:
 ```env
 NODE_ENV=production
-DOMAIN_NAME=campusflow.edu
-NEXT_PUBLIC_APP_URL=https://campusflow.edu
-POSTGRES_USER=campusflow_admin
+DOMAIN_NAME=gowithstudy.app
+NEXT_PUBLIC_APP_URL=https://gowithstudy.app
+POSTGRES_USER=gowithstudy_admin
 POSTGRES_PASSWORD=<strong-random-password-32-chars>
-POSTGRES_DB=campusflow_production
+POSTGRES_DB=gowithstudy_production
 DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}?schema=public&connection_limit=20&pool_timeout=30
 AUTH_SECRET=<openssl rand -base64 48>
-SESSION_COOKIE_NAME=__Host-campusflow_session
+SESSION_COOKIE_NAME=__Host-gowithstudy_session
 REDIS_PASSWORD=<openssl rand -hex 24>
 GEMINI_API_KEY=<production-google-gemini-key>
 ```
@@ -103,7 +103,7 @@ docker compose down
 
 ### 4.2 Production Stack (`docker-compose.prod.yml`)
 Hardened configuration for live deployments:
-- **Port Exposure**: Only ports `80` and `443` (HTTP/3 UDP included) are exposed publicly through Caddy. Web, Postgres, and Redis remain entirely isolated within the private bridge network (`campusflow-internal-net`).
+- **Port Exposure**: Only ports `80` and `443` (HTTP/3 UDP included) are exposed publicly through Caddy. Web, Postgres, and Redis remain entirely isolated within the private bridge network (`gowithstudy-network`).
 - **Resource Limits**:
   - `web`: Max 2.0 CPU cores, 2048MB RAM (Reserved: 0.5 CPU, 512MB RAM).
   - `db`: Max 2.0 CPU cores, 2048MB RAM (Reserved: 0.5 CPU, 512MB RAM).
@@ -115,7 +115,7 @@ Hardened configuration for live deployments:
 
 ## 5. Reverse Proxy & Automated SSL (Caddy)
 
-CampusFlow utilizes [Caddy v2](https://caddyserver.com/) for automated certificate management:
+GoWithStudy utilizes [Caddy v2](https://caddyserver.com/) for automated certificate management:
 - **Zero-Touch HTTPS**: Automatically negotiates and renews Let's Encrypt / ZeroSSL certificates without needing external certbot cron jobs.
 - **HTTP/3 Support**: Supports UDP-based QUIC for low-latency connections on mobile campus networks.
 - **High-Performance Compression**: Automatically compresses text responses using `zstd` and `gzip`.
@@ -210,17 +210,17 @@ Automated backup script uses `pg_dump` with gzip compression and a 14-day rollin
 **Automate Daily Backups via Crontab:**
 ```bash
 # Run backup daily at 2:00 AM
-0 2 * * * cd /opt/campusflow && ./scripts/backup-db.sh >> /var/log/campusflow_backup.log 2>&1
+0 2 * * * cd /opt/gowithstudy && ./scripts/backup-db.sh >> /var/log/gowithstudy_backup.log 2>&1
 ```
 
 ### 8.3 Disaster Recovery / Database Restoration
 To restore a database from a `.sql.gz` snapshot:
 ```bash
 # 1. Unzip the backup file
-gunzip -k backups/campusflow_db_20260925_090000.sql.gz
+gunzip -k backups/gowithstudy_db_20260925_090000.sql.gz
 
 # 2. Pipe into the production postgres container
-cat backups/campusflow_db_20260925_090000.sql | docker compose -f docker-compose.prod.yml exec -T db psql -U campusflow_admin -d campusflow_production
+cat backups/gowithstudy_db_20260925_090000.sql | docker compose -f docker-compose.prod.yml exec -T db psql -U gowithstudy_admin -d gowithstudy_production
 ```
 
 ---
@@ -241,8 +241,8 @@ If a newly deployed image exhibits unforeseen runtime anomalies:
 2. **Rollback Database Migration (If Required)**:
    ```bash
    # Restore pre-deployment database backup created by deploy.sh
-   gunzip -k backups/campusflow_db_<pre_deploy_timestamp>.sql.gz
-   cat backups/campusflow_db_<pre_deploy_timestamp>.sql | docker compose -f docker-compose.prod.yml exec -T db psql -U campusflow_admin -d campusflow_production
+   gunzip -k backups/gowithstudy_db_<pre_deploy_timestamp>.sql.gz
+   cat backups/gowithstudy_db_<pre_deploy_timestamp>.sql | docker compose -f docker-compose.prod.yml exec -T db psql -U gowithstudy_admin -d gowithstudy_production
    ```
 
 ---
@@ -257,10 +257,10 @@ docker compose -f docker-compose.prod.yml ps
 docker compose -f docker-compose.prod.yml logs -f --tail=100
 
 # Inspect real-time CPU & memory consumption
-docker stats campusflow-web-prod campusflow-db-prod campusflow-redis-prod campusflow-caddy-prod
+docker stats gowithstudy-web-prod gowithstudy-db-prod gowithstudy-redis-prod gowithstudy-caddy-prod
 
 # Execute an interactive psql session in Postgres
-docker compose -f docker-compose.prod.yml exec db psql -U campusflow_admin -d campusflow_production
+docker compose -f docker-compose.prod.yml exec db psql -U gowithstudy_admin -d gowithstudy_production
 
 # Inspect Redis cache keys
 docker compose -f docker-compose.prod.yml exec redis redis-cli -a <REDIS_PASSWORD> ping

@@ -1,4 +1,4 @@
-name: CampusFlow CI/CD Pipeline
+name: GoWithStudy CI/CD Pipeline
 
 on:
   push:
@@ -13,9 +13,9 @@ concurrency:
 env:
   NODE_ENV: test
   NEXT_TELEMETRY_DISABLED: 1
-  DATABASE_URL: "postgresql://ci_user:ci_pass@localhost:5432/campusflow_ci"
+  DATABASE_URL: "postgresql://ci_user:ci_pass@localhost:5432/gowithstudy_ci"
   AUTH_SECRET: "ci-automated-testing-secret-key-32chars-min"
-  SESSION_COOKIE_NAME: "campusflow_session"
+  SESSION_COOKIE_NAME: "gowithstudy_session"
 
 jobs:
   # Job 1: Static Analysis (Lint & TypeScript Compilation)
@@ -106,17 +106,17 @@ jobs:
           context: .
           file: ./Dockerfile
           push: false
-          tags: campusflow:ci-test
+          tags: gowithstudy:ci-test
           load: true
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
       - name: Verify Container Execution & Health
         run: |
-          docker run -d --name campusflow-test-instance \
-            -e DATABASE_URL="postgresql://test:test@localhost:5432/campusflow" \
+          docker run -d --name gowithstudy-test-instance \
+            -e DATABASE_URL="postgresql://test:test@localhost:5432/gowithstudy" \
             -e AUTH_SECRET="ci-automated-testing-secret-key-32chars-min" \
-            -p 3000:3000 campusflow:ci-test
+            -p 3000:3000 gowithstudy:ci-test
           sleep 10
           curl -f http://localhost:3000/ || exit 1
-          docker stop campusflow-test-instance
+          docker stop gowithstudy-test-instance

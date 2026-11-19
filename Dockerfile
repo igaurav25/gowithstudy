@@ -1,5 +1,5 @@
 # ==============================================================================
-# CampusFlow — Production Multi-Stage Dockerfile
+# GoWithStudy — Production Multi-Stage Dockerfile
 # Optimized for minimal image footprint (~150MB), layer caching, and rootless execution
 # ==============================================================================
 

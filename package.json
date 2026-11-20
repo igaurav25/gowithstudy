@@ -15,7 +15,9 @@
     "test:e2e": "playwright test",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
-    "db:migrate": "prisma migrate deploy"
+    "db:migrate": "prisma migrate deploy",
+    "db:seed": "node --experimental-strip-types prisma/seed.ts",
+    "cleanup:demo": "node --experimental-strip-types scripts/cleanup-demo.ts"
   },
   "dependencies": {
     "@node-rs/argon2": "^2.2.2",

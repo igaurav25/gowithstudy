@@ -139,6 +139,11 @@ class AuthStore {
   }
 
   private async initDefaultUsers() {
+    // Strictly prevent demo seeding in production and Vercel environments
+    if (process.env.NODE_ENV === "production" || process.env.VERCEL) {
+      return;
+    }
+
     const defaultPasswordHash = await hashPassword("Password123!");
 
     const defaultUsers: StoredUser[] = [

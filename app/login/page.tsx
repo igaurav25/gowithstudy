@@ -16,8 +16,6 @@ import {
   GraduationCap,
   ArrowRight,
   Sparkles,
-  User,
-  ShieldCheck,
   ShieldAlert,
   Lock,
   X,
@@ -151,12 +149,6 @@ export default function LoginPage() {
     }
   };
 
-  const fillDemo = (demoId: string) => {
-    setIdentifier(demoId);
-    setPassword("Password123!");
-    setErrorMessage(null);
-  };
-
   return (
     <div className="min-h-screen flex items-center justify-center p-4 sm:p-6 bg-zinc-50/60 dark:bg-zinc-950/80">
       <div className="w-full max-w-md">
@@ -197,40 +189,6 @@ export default function LoginPage() {
                 <span>{errorMessage}</span>
               </div>
             )}
-
-            {/* Quick Demo Credentials */}
-            <div className="p-3 rounded-xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 space-y-2">
-              <div className="flex items-center justify-between text-[11px] font-semibold text-zinc-500 uppercase tracking-wider">
-                <span>Demo Fast Fill</span>
-                <span className="text-indigo-600 dark:text-indigo-400 font-mono">Password123!</span>
-              </div>
-              <div className="grid grid-cols-3 gap-1.5">
-                <button
-                  type="button"
-                  onClick={() => fillDemo("student@gowithstudy.app")}
-                  className="p-1.5 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 text-xs font-medium hover:border-indigo-500 transition-colors flex items-center justify-center gap-1 text-zinc-700 dark:text-zinc-300"
-                >
-                  <User className="w-3 h-3 text-indigo-500" />
-                  <span>Student</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => fillDemo("moderator@gowithstudy.app")}
-                  className="p-1.5 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 text-xs font-medium hover:border-indigo-500 transition-colors flex items-center justify-center gap-1 text-zinc-700 dark:text-zinc-300"
-                >
-                  <Sparkles className="w-3 h-3 text-violet-500" />
-                  <span>Moderator</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => fillDemo("admin@gowithstudy.app")}
-                  className="p-1.5 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 text-xs font-medium hover:border-indigo-500 transition-colors flex items-center justify-center gap-1 text-zinc-700 dark:text-zinc-300"
-                >
-                  <ShieldCheck className="w-3 h-3 text-emerald-500" />
-                  <span>Admin</span>
-                </button>
-              </div>
-            </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>

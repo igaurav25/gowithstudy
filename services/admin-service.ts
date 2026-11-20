@@ -88,6 +88,9 @@ let inMemoryAuditLogs: AuditLogItem[] = [];
 let isInitialized = false;
 
 function initializeDemoAdminData() {
+  if (process.env.NODE_ENV === "production" || process.env.VERCEL) {
+    return;
+  }
   if (isInitialized && inMemoryUsers.length > 0) return;
 
   const now = new Date();

@@ -71,7 +71,8 @@ export function GoogleSignInButton({
 
   const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
   const isDevOrBypass =
-    process.env.NODE_ENV !== "production" ||
+    process.env.NODE_ENV !== "production" &&
+    !process.env.VERCEL &&
     process.env.NEXT_PUBLIC_ALLOW_DEV_BYPASS === "true";
 
   // Initialize Google Identity Services if client ID is configured
@@ -242,35 +243,6 @@ export function GoogleSignInButton({
               <div className="mb-4 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs font-medium text-emerald-600 dark:text-emerald-400 flex items-center gap-2">
                 <Check className="w-4 h-4 flex-shrink-0" />
                 <span>{successMsg}</span>
-              </div>
-            )}
-
-            {rememberedEmail && (
-              <div className="mb-4 p-3 rounded-xl bg-indigo-50/60 dark:bg-indigo-950/30 border border-indigo-200/80 dark:border-indigo-800/60">
-                <div className="text-[11px] font-semibold text-indigo-700 dark:text-indigo-300 uppercase tracking-wider mb-2">
-                  Remembered on this device:
-                </div>
-                <button
-                  type="button"
-                  disabled={isPending}
-                  onClick={() => handleDevSubmit(rememberedEmail)}
-                  className="w-full flex items-center justify-between p-2.5 rounded-lg bg-white dark:bg-zinc-800 border border-indigo-200 dark:border-indigo-700 hover:border-indigo-400 text-left text-xs transition-colors shadow-sm"
-                >
-                  <div className="flex items-center gap-2.5 truncate">
-                    <div className="w-7 h-7 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-xs uppercase flex-shrink-0">
-                      {rememberedEmail[0]}
-                    </div>
-                    <div className="truncate">
-                      <div className="font-medium text-zinc-900 dark:text-zinc-100 truncate">
-                        {rememberedEmail}
-                      </div>
-                      <div className="text-[10px] text-zinc-500">
-                        1-Tap Instant Sign-In
-                      </div>
-                    </div>
-                  </div>
-                  <ArrowRight className="w-4 h-4 text-indigo-600 dark:text-indigo-400 flex-shrink-0" />
-                </button>
               </div>
             )}
 

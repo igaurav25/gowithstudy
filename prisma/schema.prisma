@@ -9,19 +9,51 @@ datasource db {
 
 enum Role {
   USER
+  STUDENT
+  TEACHER
   MODERATOR
   ADMIN
+  SUPER_ADMIN
+}
+
+enum AccountStatus {
+  PENDING_ACTIVATION
+  ACTIVE
+  SUSPENDED
+  DEACTIVATED
+}
+
+enum ApplicationType {
+  STUDENT
+  TEACHER
+}
+
+enum ApplicationStatus {
+  PENDING
+  APPROVED
+  REJECTED
 }
 
 model User {
-  id            String    @id @default(cuid())
-  email         String    @unique
-  passwordHash  String
-  role          Role      @default(USER)
-  emailVerified Boolean   @default(false)
-  isSuspended   Boolean   @default(false)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id             String         @id @default(cuid())
+  email          String         @unique
+  emailCanonical String?        @unique
+  phone          String?
+  phoneE164      String?        @unique
+  username       String?        @unique
+  passwordHash   String?
+  role           Role           @default(STUDENT)
+  accountStatus  AccountStatus  @default(ACTIVE)
+  isLegacy       Boolean        @default(false)
+  emailVerified  Boolean        @default(false)
+  phoneVerified  Boolean        @default(false)
+  isSuspended    Boolean        @default(false)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  applicationId  String?        @unique
+  application    Application?   @relation("ApplicationToUser", fields: [applicationId], references: [id], onDelete: SetNull)
+  adminSecurity  AdminSecurity?
 
   profile                 Profile?
   sessions                Session[]
@@ -45,7 +77,9 @@ model User {
   auditLogs               AuditLog[]
 
   @@index([email])
+  @@index([emailCanonical])
   @@index([role])
+  @@index([accountStatus])
 }
 
 model Profile {
@@ -180,13 +214,88 @@ model AuditLog {
   id        String   @id @default(cuid())
   userId    String?
   user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  actorRole String?
   action    String
   entity    String
   entityId  String?
+  ipAddress String?
   metadata  Json?
   createdAt DateTime @default(now())
 
   @@index([userId, action])
+  @@index([action, createdAt])
+  @@index([entity, entityId])
+}
+
+model Application {
+  id              String            @id @default(cuid())
+  referenceId     String            @unique
+  type            ApplicationType
+  status          ApplicationStatus @default(PENDING)
+  fullName        String
+  email           String
+  emailCanonical  String
+  phone           String
+  phoneE164       String
+  college         String
+  course          String?
+  branch          String?
+  year            Int?
+  rollNumber      String?
+  rollNumberNorm  String?
+  idProofUrl      String?
+  institution     String?
+  designation     String?
+  qualification   String?
+  department      String?
+  experienceYears Int?
+  teacherIdNumber String?
+  reviewedBy      String?
+  reviewedAt      DateTime?
+  rejectionReason String?
+  ipAddress       String?
+  userAgent       String?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  activationToken ActivationToken?
+  user            User?             @relation("ApplicationToUser")
+
+  @@index([status, type])
+  @@index([emailCanonical])
+  @@index([phoneE164])
+  @@index([referenceId])
+}
+
+model ActivationToken {
+  id            String      @id @default(cuid())
+  applicationId String      @unique
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  tokenHash     String      @unique
+  expiresAt     DateTime
+  consumedAt    DateTime?
+  createdAt     DateTime    @default(now())
+
+  @@index([tokenHash])
+  @@index([expiresAt])
+}
+
+model AdminSecurity {
+  id             String    @id @default(cuid())
+  userId         String    @unique
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  totpSecretEnc  String
+  totpIv         String
+  totpTag        String
+  totpEnabled    Boolean   @default(true)
+  backupCodes    String[]  @default([])
+  lastTotpUsedAt DateTime?
+  failedAttempts Int       @default(0)
+  lockedUntil    DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([userId])
 }
 
 model CommunityPost {

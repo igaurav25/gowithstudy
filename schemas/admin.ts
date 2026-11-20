@@ -34,8 +34,8 @@ export type ReportActionTaken = (typeof REPORT_ACTIONS)[number];
  */
 export const updateUserRoleSchema = z.object({
   targetUserId: z.string().min(1, { message: "Target user ID is required" }),
-  role: z.enum(["USER", "MODERATOR", "ADMIN"], {
-    message: "Role must be USER, MODERATOR, or ADMIN",
+  role: z.enum(["USER", "STUDENT", "TEACHER", "MODERATOR", "ADMIN", "SUPER_ADMIN"], {
+    message: "Role must be USER, STUDENT, TEACHER, MODERATOR, ADMIN, or SUPER_ADMIN",
   }),
   reason: z
     .string()

@@ -36,6 +36,7 @@ import {
   COLLEGE_INFO_CATEGORY_LABELS,
   CollegeInfoCategory,
 } from "@/schemas/college-info";
+import { Role } from "@/lib/rbac";
 import { deleteCollegeInfoAction } from "@/features/college-info/actions";
 import { CreateCollegeInfoModal } from "./create-college-info-modal";
 
@@ -44,7 +45,7 @@ interface CollegeInfoClientViewProps {
   initialNotices: CollegeNoticeItem[];
   initialStats: CollegeStats;
   currentCollegeCode: string;
-  userRole: "USER" | "MODERATOR" | "ADMIN";
+  userRole?: Role;
   userCollege?: string;
 }
 

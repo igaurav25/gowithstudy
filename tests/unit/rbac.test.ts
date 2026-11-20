@@ -8,9 +8,13 @@ import {
 describe("Unit: Role-Based Access Control (RBAC)", () => {
   it("should have correct hierarchy levels", () => {
     expect(ROLE_HIERARCHY.USER).toBe(1);
+    expect(ROLE_HIERARCHY.STUDENT).toBe(1);
+    expect(ROLE_HIERARCHY.TEACHER).toBe(1);
     expect(ROLE_HIERARCHY.MODERATOR).toBe(2);
     expect(ROLE_HIERARCHY.ADMIN).toBe(3);
+    expect(ROLE_HIERARCHY.SUPER_ADMIN).toBe(4);
 
+    expect(ROLE_HIERARCHY.SUPER_ADMIN).toBeGreaterThan(ROLE_HIERARCHY.ADMIN);
     expect(ROLE_HIERARCHY.ADMIN).toBeGreaterThan(ROLE_HIERARCHY.MODERATOR);
     expect(ROLE_HIERARCHY.MODERATOR).toBeGreaterThan(ROLE_HIERARCHY.USER);
   });

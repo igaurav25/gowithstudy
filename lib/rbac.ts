@@ -1,4 +1,4 @@
-export type Role = "USER" | "MODERATOR" | "ADMIN";
+export type Role = "USER" | "STUDENT" | "TEACHER" | "MODERATOR" | "ADMIN" | "SUPER_ADMIN";
 
 export interface UserSessionPayload {
   userId: string;
@@ -15,14 +15,20 @@ export interface UserSessionPayload {
 
 export const ROLES = {
   USER: "USER" as Role,
+  STUDENT: "STUDENT" as Role,
+  TEACHER: "TEACHER" as Role,
   MODERATOR: "MODERATOR" as Role,
   ADMIN: "ADMIN" as Role,
+  SUPER_ADMIN: "SUPER_ADMIN" as Role,
 };
 
 export const ROLE_HIERARCHY: Record<Role, number> = {
   USER: 1,
+  STUDENT: 1,
+  TEACHER: 1,
   MODERATOR: 2,
   ADMIN: 3,
+  SUPER_ADMIN: 4,
 };
 
 /**

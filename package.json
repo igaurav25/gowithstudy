@@ -17,6 +17,7 @@
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate deploy",
     "db:seed": "node --experimental-strip-types prisma/seed.ts",
+    "migrate:legacy": "node --experimental-strip-types scripts/migrate-legacy-users.ts",
     "cleanup:demo": "node --experimental-strip-types scripts/cleanup-demo.ts"
   },
   "dependencies": {

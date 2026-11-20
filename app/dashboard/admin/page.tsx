@@ -7,7 +7,7 @@ import { DashboardService } from "@/services/dashboard-service";
 import { DashboardNav } from "@/components/dashboard/dashboard-nav";
 import { AdminClientView } from "@/components/admin/admin-client-view";
 import { Button } from "@/components/ui/button";
-import { ShieldAlert, ArrowLeft } from "lucide-react";
+import { ShieldAlert, ArrowLeft, ArrowRight } from "lucide-react";
 
 export const metadata = {
   title: "Admin & Governance Console | GoWithStudy",
@@ -68,6 +68,27 @@ export default async function AdminPage() {
       />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+        {(session.role === "ADMIN" || session.role === "SUPER_ADMIN") && (
+          <div className="mb-6 p-4 rounded-2xl border border-indigo-200 dark:border-indigo-900/60 bg-indigo-50/70 dark:bg-indigo-950/40 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <span className="font-semibold text-xs text-indigo-900 dark:text-indigo-200 uppercase tracking-wider">
+                  Super Admin Console Available
+                </span>
+              </div>
+              <p className="text-xs text-zinc-600 dark:text-zinc-400">
+                Admission approvals, student & teacher applications, immutable audit trail, and zero-trust security are now managed in the dedicated admin portal.
+              </p>
+            </div>
+            <Link href="/admin">
+              <Button size="sm" className="gap-2 bg-indigo-600 hover:bg-indigo-700 text-white shrink-0 text-xs">
+                <span>Go to Admin Portal</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Button>
+            </Link>
+          </div>
+        )}
+
         <AdminClientView
           initialUsers={users}
           initialReports={reports}

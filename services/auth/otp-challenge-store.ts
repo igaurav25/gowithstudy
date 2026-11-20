@@ -13,6 +13,7 @@ import {
 export type OtpPurpose =
   | "SIGNUP_EMAIL"
   | "SIGNUP_PHONE"
+  | "APPLICATION_EMAIL"
   | "LOGIN_STEP_UP"
   | "PASSWORD_RESET"
   | "CHANGE_EMAIL"

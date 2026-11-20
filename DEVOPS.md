@@ -317,3 +317,21 @@ Generates timestamped, compressed PostgreSQL dumps using direct `DATABASE_URL` o
 ./scripts/backup-db.sh
 ```
 
+### 11.6 Web-Based First-Time Admin Setup (`/setup-admin`)
+For deployments where direct terminal/CLI access is unavailable (e.g. Vercel serverless):
+1. Configure `ADMIN_SETUP_TOKEN=<32_byte_random_secret>` in your Vercel Environment Variables.
+2. Deploy the application.
+3. Navigate to `https://<your-domain>/setup-admin`.
+4. Fill in Admin ID, Gmail, Phone, and Password. Verify the 6-digit email OTP.
+5. Enroll in TOTP 2FA (QR/secret key) and save the 10 one-time recovery codes.
+6. **Immediately remove `ADMIN_SETUP_TOKEN` from Vercel Environment Variables and redeploy**. The endpoint permanently returns 404 once a `SUPER_ADMIN` exists.
+
+### 11.7 Web-Based Emergency Admin Recovery (`/recover-admin`)
+If an administrator loses their credentials or authenticator device:
+1. Configure `ADMIN_RECOVERY_TOKEN=<32_byte_random_secret>` in your Vercel Environment Variables and redeploy.
+2. Navigate to `https://<your-domain>/recover-admin`.
+3. Enter the recovery token; a 6-digit OTP will be dispatched to the registered `SUPER_ADMIN` Gmail address.
+4. Set a new password and re-enroll TOTP 2FA. This immediately revokes all active admin sessions.
+5. **Remove or rotate `ADMIN_RECOVERY_TOKEN` from Vercel Environment Variables and redeploy**.
+
+

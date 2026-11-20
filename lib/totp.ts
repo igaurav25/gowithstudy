@@ -129,7 +129,12 @@ export function generateTotpUri(email: string, secretBase32: string, issuer: str
 // ==============================================================================
 
 function getEncryptionKey(): Buffer {
-  const secret = process.env.ADMIN_TOTP_ENCRYPTION_KEY || process.env.AUTH_SECRET || "gowithstudy-admin-master-encryption-key-32chars";
+  const secret =
+    process.env.APP_ENCRYPTION_KEY ||
+    process.env.ADMIN_TOTP_ENCRYPTION_KEY ||
+    process.env.ADMIN_SECRET_KEY ||
+    process.env.AUTH_SECRET ||
+    "gowithstudy-admin-master-encryption-key-32chars";
   return crypto.createHash("sha256").update(secret).digest();
 }
 

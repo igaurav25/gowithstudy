@@ -893,10 +893,34 @@ export const AuthService = {
     return Array.from(store.users.values());
   },
 
+  async listAllUsers(): Promise<StoredUser[]> {
+    return Array.from(store.users.values());
+  },
+
   async saveUserDirectly(user: StoredUser): Promise<void> {
     store.users.set(user.email.toLowerCase(), user);
     if (user.username) {
       store.usersByUsername.set(user.username.toLowerCase(), user.id);
+    }
+    store.saveUsersToDisk();
+  },
+
+  _resetInMemory(): void {
+    store.users.clear();
+    store.usersByUsername.clear();
+    store.usersByPhone.clear();
+    store.sessions.clear();
+    store.trustedDevices.clear();
+    store.resetTokens.clear();
+  },
+
+  deleteUser(idOrEmail: string): void {
+    const key = idOrEmail.toLowerCase();
+    for (const [email, u] of store.users.entries()) {
+      if (email === key || u.id === idOrEmail || u.username === key) {
+        store.users.delete(email);
+        if (u.username) store.usersByUsername.delete(u.username.toLowerCase());
+      }
     }
     store.saveUsersToDisk();
   },

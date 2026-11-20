@@ -47,12 +47,45 @@ GoWithStudy implements a defense-in-depth, zero-trust security architecture acro
 - **Primary Algorithm**: Uses `Argon2id` (RFC 9106) with memory cost 64 MB, time cost 3 iterations, and parallelism 4 threads.
 - **Transparent Migration**: Legacy `bcrypt` hashes are transparently verified upon login and automatically rehashed to `Argon2id` without user disruption.
 
-### 3. Super Admin Hardening & 2FA (RFC 6238 TOTP)
-- **Independent Admin Portal**: Isolated at `/admin` and `/admin/login`, protected by `robots: { index: false, follow: false }`.
-- **Single Super Admin Invariant**: Enforced at the database engine level via PostgreSQL partial unique index `idx_user_single_super_admin WHERE role = 'SUPER_ADMIN'`.
-- **Mandatory TOTP 2FA**: Super administrators must authenticate via two-step login: password followed by RFC 6238 TOTP (with $\pm 1$ step drift allowance) or pre-hashed backup codes.
-- **Encrypted Secrets**: TOTP shared secrets are encrypted at rest using AES-256-GCM authenticated encryption.
-- **Dedicated Admin Cookie**: Issues an isolated `__Host-gws_admin` session cookie (`SameSite=Strict`, `HttpOnly`, `Secure`, `Path=/`, max duration 8 hours).
+### 3. Unified Login Page & Super Admin Access
+- **Single Login Page**: No separate website or subdomain. Access is toggled in-place on `/login` via a discreet "Admin" link with a lock icon.
+- **Mutual Rejection & Anti-Enumeration**:
+  - The student login endpoint (`/api/auth/*` or `loginWithIdentifierAction`) strictly rejects administrative accounts (`ADMIN`, `SUPER_ADMIN`).
+  - The admin login endpoint (`/api/admin/auth/*`) strictly rejects non-administrative accounts.
+  - Both endpoints execute constant-time dummy Argon2id verifications on rejections to prevent timing-based user enumeration.
+- **Brute-Force & Lockout Defense**:
+  - Per-IP and per-device progressive exponential backoff after failed attempts.
+  - No permanent account lockout (prevents malicious actors from locking the genuine admin out).
+  - Security alerts dispatched to admin email on repeated failures and successful logins.
+- **Mandatory TOTP 2FA**:
+  - Two-step authentication: ID (Admin ID, Gmail, or E.164 Mobile) + Password followed by 6-digit RFC 6238 TOTP or single-use backup codes.
+  - TOTP shared secrets encrypted at rest using AES-256-GCM via `APP_ENCRYPTION_KEY`.
+- **Dedicated Admin Cookie**:
+  - Sets `__Host-gws_admin` cookie (`SameSite=Strict`, `HttpOnly`, `Secure`, `Path=/`, 30 min idle / 8 hours max lifetime).
+
+### 4. One-Time Admin Setup (`/setup-admin`)
+- **Strict Availability Gating**: The `/setup-admin` endpoint returns a plain `404 Not Found` unless BOTH conditions are met:
+  1. No `SUPER_ADMIN` currently exists in the database.
+  2. The `ADMIN_SETUP_TOKEN` environment variable is explicitly set.
+- **Constant-Time Token Comparison**: Token verification uses `crypto.timingSafeEqual` over SHA-256 digests.
+- **Gmail Ownership Proof**: Requires completing an email OTP challenge to the admin Gmail before account creation.
+- **Atomic Creation**: Enforces the single `SUPER_ADMIN` invariant in a single database transaction guarded by the `idx_user_single_super_admin` partial unique index.
+- **Mandatory First TOTP Verification**: The admin must enroll their authenticator and submit a valid 6-digit TOTP code before the setup is considered complete.
+- **Permanent Disabling**: Once provisioned, `/setup-admin` is permanently disabled. Admins must delete `ADMIN_SETUP_TOKEN` from their environment variables and redeploy.
+
+### 5. Emergency Admin Recovery (`/recover-admin`)
+- **Offline Out-of-Band Gating**: The `/recover-admin` endpoint returns a plain `404 Not Found` unless BOTH conditions are met:
+  1. A `SUPER_ADMIN` exists in the system.
+  2. The `ADMIN_RECOVERY_TOKEN` environment variable is explicitly configured in Vercel.
+- **Dual-Factor Recovery Verification**:
+  1. Constant-time validation of `ADMIN_RECOVERY_TOKEN`.
+  2. 6-digit email OTP dispatched to the registered `SUPER_ADMIN` Gmail address.
+- **Atomic Credential Reset & Session Invalidation**:
+  - Sets new Argon2id password (min 12 characters).
+  - Re-enrolls TOTP 2FA with a fresh secret and generates 10 new backup codes.
+  - Immediately revokes all active admin sessions across all devices.
+  - Dispatches security alert email and creates an immutable audit log entry.
+  - Admin must remove or rotate `ADMIN_RECOVERY_TOKEN` post-recovery.
 
 ### 4. Database Concurrency & Immutability
 - **Anti-Duplication Partial Indexes**:

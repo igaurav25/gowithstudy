@@ -17,7 +17,10 @@ export type OtpPurpose =
   | "LOGIN_STEP_UP"
   | "PASSWORD_RESET"
   | "CHANGE_EMAIL"
-  | "CHANGE_PHONE";
+  | "CHANGE_PHONE"
+  | "ADMIN_SETUP_EMAIL"
+  | "ADMIN_RECOVERY_EMAIL"
+  | "ADMIN_LOGIN_FALLBACK";
 
 export interface StoredOtpChallenge {
   id: string;
@@ -251,5 +254,25 @@ export class OtpChallengeStore {
       success: true,
       challenge,
     };
+  }
+
+  /**
+   * Verifies an OTP challenge looked up directly by purpose and target email/phone.
+   */
+  static verifyByTarget(params: {
+    purpose: OtpPurpose;
+    targetCanonical: string;
+    submittedCode: string;
+  }): {
+    success: boolean;
+    error?: string;
+  } {
+    const cleanTarget = params.targetCanonical.toLowerCase().trim();
+    const indexKey = `${params.purpose}:${cleanTarget}`;
+    const challengeId = activeTargetIndex.get(indexKey);
+    if (!challengeId) {
+      return { success: false, error: "No active verification challenge found." };
+    }
+    return this.verifyChallenge({ challengeId, submittedCode: params.submittedCode });
   }
 }

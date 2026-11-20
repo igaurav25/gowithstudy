@@ -450,7 +450,14 @@ export async function loginWithIdentifierAction(params: {
 
   // Find user by username, canonical email, or phone
   const user = await AuthService.getUserByIdentifier(trimmed);
-  if (!user) {
+
+  // SECURITY: Student endpoint strictly rejects ADMIN and SUPER_ADMIN accounts with constant timing
+  if (!user || user.role === "ADMIN" || user.role === "SUPER_ADMIN") {
+    // Perform dummy Argon2id verification so timing is indistinguishable from valid user lookup
+    await verifyPasswordUnified(
+      params.password,
+      "$argon2id$v=19$m=65536,t=3,p=4$dHVtbXlzYWx0MTIzNA$e2+q+3X9aUq8zWwQpT0oF7vGZ8vJ2yK7lA3bC4dE5fG"
+    ).catch(() => null);
     return { success: false, message: "ID or password is incorrect." };
   }
 
@@ -533,12 +540,7 @@ export async function loginWithIdentifierAction(params: {
       duration
     );
 
-    const redirectUrl =
-      user.role === "TEACHER"
-        ? "/teacher"
-        : user.role === "ADMIN" || user.role === "SUPER_ADMIN"
-        ? "/admin"
-        : "/dashboard";
+    const redirectUrl = user.role === "TEACHER" ? "/teacher" : "/dashboard";
 
     await setSessionCookie(token, duration);
     return { success: true, data: { redirectUrl } };

@@ -888,4 +888,8 @@ export const AuthService = {
 
     return null;
   },
+
+  getAllUsers(): StoredUser[] {
+    return Array.from(store.users.values());
+  },
 };

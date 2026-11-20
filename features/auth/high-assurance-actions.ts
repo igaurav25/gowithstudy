@@ -61,6 +61,15 @@ export async function startSignupFlowAction(params: {
     maskedEmail: string;
   }>
 > {
+  // SECURITY GUARD: When verification workflow is enabled, self-service registration is strictly blocked
+  if (process.env.VERIFICATION_WORKFLOW_ENABLED === "true") {
+    return {
+      success: false,
+      message:
+        "Direct self-service account registration is currently disabled. Please submit an application at /apply for institutional verification.",
+    };
+  }
+
   const rawEmail = params.email.trim();
   if (!rawEmail || !rawEmail.includes("@")) {
     return { success: false, message: "Please provide a valid email address." };
@@ -307,6 +316,13 @@ export async function completeRegistrationAction(params: {
   signupToken: string;
   formData: z.infer<typeof completeProfileSchema>;
 }): Promise<ActionResult<{ redirectUrl: string }>> {
+  if (process.env.VERIFICATION_WORKFLOW_ENABLED === "true") {
+    return {
+      success: false,
+      message: "Direct registration is currently disabled. Please submit an application at /apply.",
+    };
+  }
+
   // 1. Verify Token & State Machine
   const tokenPayload = await SignupStateMachine.verifyToken(params.signupToken);
   if (!tokenPayload) {

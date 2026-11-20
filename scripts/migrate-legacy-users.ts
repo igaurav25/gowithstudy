@@ -1,7 +1,28 @@
 import fs from "fs";
 import path from "path";
 import { PrismaClient } from "@prisma/client";
-import { canonicalizeEmail, canonicalizePhone } from "../lib/canonicalize.ts";
+
+function canonicalizeEmail(email: string): string {
+  const clean = email.trim().toLowerCase();
+  const parts = clean.split("@");
+  if (parts.length !== 2) return clean;
+  let [localPart, domain] = parts;
+  if (domain === "googlemail.com") domain = "gmail.com";
+  if (domain === "gmail.com") {
+    localPart = localPart.split("+")[0] || localPart;
+    localPart = localPart.replace(/\./g, "");
+  }
+  return `${localPart}@${domain}`;
+}
+
+function normalizePhone(phone: string): string | null {
+  const cleaned = phone.trim().replace(/\s+/g, "");
+  if (!cleaned) return null;
+  if (cleaned.startsWith("+")) return cleaned;
+  const digits = cleaned.replace(/\D/g, "");
+  if (digits.length === 10) return `+91${digits}`;
+  return digits ? `+${digits}` : null;
+}
 
 /**
  * Legacy user migration script.
@@ -37,8 +58,7 @@ async function migrateLegacyUsers() {
 
       for (const u of usersToMigrate) {
         const canonical = canonicalizeEmail(u.email);
-        const phoneRes = u.phone ? canonicalizePhone(u.phone) : null;
-        const phoneE164 = phoneRes?.isValid ? phoneRes.e164 : null;
+        const phoneE164 = u.phone ? normalizePhone(u.phone) : null;
 
         await prisma.user.update({
           where: { id: u.id },
@@ -80,8 +100,7 @@ async function migrateLegacyUsers() {
             modified = true;
           }
           const emailCanonical = user.emailCanonical || canonicalizeEmail(user.email || "");
-          const phoneRes = user.phone ? canonicalizePhone(user.phone) : null;
-          const phoneE164 = phoneRes?.isValid ? phoneRes.e164 : user.phoneE164;
+          const phoneE164 = user.phone ? normalizePhone(user.phone) : user.phoneE164;
           const accountStatus = user.accountStatus || "ACTIVE";
           const isLegacy = user.isLegacy !== undefined ? user.isLegacy : true;
 

@@ -25,6 +25,8 @@ export interface StoredUser {
   emailVerified: boolean;
   phoneVerified?: boolean;
   avatarUrl?: string;
+  isSuspended?: boolean;
+  accountStatus?: "ACTIVE" | "PENDING_ACTIVATION" | "SUSPENDED" | "DEACTIVATED";
   createdAt: Date;
 }
 

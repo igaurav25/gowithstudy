@@ -10,6 +10,11 @@ const COOKIE_NAME = process.env.SESSION_COOKIE_NAME || "gowithstudy_session";
 // 30 days default, 60 days if remember me is true (ensures mobile & desktop persistence)
 export const SESSION_DURATION_DEFAULT = 30 * 24 * 60 * 60; // 30 days in seconds
 export const SESSION_DURATION_REMEMBER = 60 * 24 * 60 * 60; // 60 days in seconds
+export const ADMIN_SESSION_DURATION = 8 * 60 * 60; // 8 hours absolute max for admin
+
+export const ADMIN_COOKIE_NAME =
+  process.env.ADMIN_SESSION_COOKIE_NAME ||
+  (process.env.NODE_ENV === "production" ? "__Host-gws_admin" : "gws_admin");
 
 /**
  * Hashes a plaintext password using bcrypt with salt rounds = 10.
@@ -107,6 +112,61 @@ export async function getSession(): Promise<UserSessionPayload | null> {
     const token =
       cookieStore.get(COOKIE_NAME)?.value ||
       cookieStore.get("campusflow_session")?.value;
+    if (!token) return null;
+    return await verifySessionToken(token);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Sets a hardened admin session cookie (__Host-gws_admin).
+ * SameSite=Strict, Secure, HttpOnly, 8h max lifetime.
+ */
+export async function setAdminSessionCookie(
+  token: string,
+  durationSeconds: number = ADMIN_SESSION_DURATION
+): Promise<void> {
+  try {
+    const cookieStore = await cookies();
+    const isHttps =
+      (process.env.NEXT_PUBLIC_APP_URL?.startsWith("https://") ?? false) ||
+      Boolean(process.env.VERCEL);
+
+    cookieStore.set(ADMIN_COOKIE_NAME, token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production" && isHttps,
+      sameSite: "strict",
+      path: "/",
+      maxAge: durationSeconds,
+    });
+  } catch {
+    // Outside request store (e.g. testing)
+  }
+}
+
+/**
+ * Clears the dedicated admin session cookie.
+ */
+export async function clearAdminSessionCookie(): Promise<void> {
+  try {
+    const cookieStore = await cookies();
+    cookieStore.delete(ADMIN_COOKIE_NAME);
+    cookieStore.delete("gws_admin");
+  } catch {
+    // Outside request store
+  }
+}
+
+/**
+ * Reads and verifies the dedicated admin session cookie.
+ */
+export async function getAdminSession(): Promise<UserSessionPayload | null> {
+  try {
+    const cookieStore = await cookies();
+    const token =
+      cookieStore.get(ADMIN_COOKIE_NAME)?.value ||
+      cookieStore.get("gws_admin")?.value;
     if (!token) return null;
     return await verifySessionToken(token);
   } catch {

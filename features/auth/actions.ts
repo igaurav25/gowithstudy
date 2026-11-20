@@ -32,6 +32,12 @@ export async function signupAction(
   prevState: unknown,
   formData: FormData
 ): Promise<ActionResult<{ verificationToken: string; email: string }>> {
+  if (process.env.VERIFICATION_WORKFLOW_ENABLED === "true") {
+    return {
+      success: false,
+      message: "Direct registration is disabled. Please submit an application at /apply.",
+    };
+  }
   const rawData = {
     name: formData.get("name"),
     email: formData.get("email"),

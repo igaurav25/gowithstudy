@@ -67,6 +67,7 @@ const POPULAR_BRANCHES = [
 
 export default function SignupPage() {
   const router = useRouter();
+  const isWorkflowEnabled = process.env.NEXT_PUBLIC_VERIFICATION_WORKFLOW_ENABLED === "true";
 
   // Wizard state machine
   const [step, setStep] = React.useState<SignupStep>("EMAIL_INPUT");
@@ -383,6 +384,46 @@ export default function SignupPage() {
           </div>
         </div>
 
+        {isWorkflowEnabled ? (
+          <Card className="border-indigo-200/80 dark:border-indigo-900/60 shadow-xl shadow-indigo-500/5">
+            <CardHeader className="text-center pb-2">
+              <div className="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mx-auto mb-3 border border-indigo-200 dark:border-indigo-800">
+                <GraduationCap className="w-6 h-6" />
+              </div>
+              <CardTitle className="text-xl">Institutional Admission Required</CardTitle>
+              <CardDescription className="text-sm">
+                Direct self-service registration is closed. All students and educators must submit an application for institutional verification before receiving an activation link.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="pt-4 space-y-4">
+              <div className="p-3.5 rounded-xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-xs text-zinc-600 dark:text-zinc-400 space-y-1.5">
+                <p className="font-semibold text-zinc-900 dark:text-zinc-100">Verification Steps:</p>
+                <ol className="list-decimal pl-4 space-y-1">
+                  <li>Submit student or educator details at <strong className="text-indigo-600 dark:text-indigo-400">/apply</strong>.</li>
+                  <li>Verify institutional email via one-time passkey.</li>
+                  <li>Administrative review and credential validation.</li>
+                  <li>Upon approval, a secure password setup link is sent to your inbox.</li>
+                </ol>
+              </div>
+              <Button
+                variant="gradient"
+                className="w-full h-11 text-sm font-semibold"
+                onClick={() => router.push("/apply")}
+              >
+                <span>Proceed to Application Portal</span>
+                <ArrowRight className="w-4 h-4 ml-1.5" />
+              </Button>
+              <div className="text-center pt-2">
+                <Link
+                  href="/login"
+                  className="text-xs text-zinc-500 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+                >
+                  Already approved? Sign in
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
+        ) : (
         <Card className="border-zinc-200/80 dark:border-zinc-800 shadow-xl shadow-indigo-500/5 overflow-hidden">
           {/* Error Banner */}
           {errorMessage && (
@@ -988,6 +1029,7 @@ export default function SignupPage() {
             </>
           )}
         </Card>
+        )}
       </div>
     </div>
   );

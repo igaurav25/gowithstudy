@@ -1,5 +1,6 @@
 import fs from "fs";
 import path from "path";
+import crypto from "crypto";
 import { PrismaClient } from "@prisma/client";
 import { hashPasswordArgon2 } from "../lib/crypto-auth.ts";
 import {
@@ -37,7 +38,8 @@ async function bootstrapAdmin() {
 
   const email = (getArg("--email") || process.env.ADMIN_BOOTSTRAP_EMAIL || "superadmin@gowithstudy.app").trim();
   const name = (getArg("--name") || process.env.ADMIN_BOOTSTRAP_NAME || "Super Administrator").trim();
-  const password = getArg("--password") || process.env.ADMIN_BOOTSTRAP_PASSWORD || "SuperAdmin@2026!SecureKey";
+  const generatedPassword = crypto.randomBytes(16).toString("base64url") + "@Gws!";
+  const password = getArg("--password") || process.env.ADMIN_BOOTSTRAP_PASSWORD || generatedPassword;
 
   if (!email || !password || password.length < 12) {
     console.error("❌ Error: Password must be at least 12 characters.");
@@ -125,6 +127,9 @@ async function bootstrapAdmin() {
       console.log(`   User ID:     ${user.id}`);
       console.log(`   Email:       ${email}`);
       console.log(`   Name:        ${name}`);
+      if (!getArg("--password") && !process.env.ADMIN_BOOTSTRAP_PASSWORD) {
+        console.log(`   Password:    ${password} (Generated)`);
+      }
       console.log("=================================================");
       console.log("🔐 TOTP 2-FACTOR AUTHENTICATION SETUP");
       console.log(`   Secret Key:  ${totpSecret}`);
@@ -197,6 +202,9 @@ async function bootstrapAdmin() {
     console.log("✅ Super Admin Account Successfully Provisioned in Disk Store!");
     console.log(`   Email:       ${email}`);
     console.log(`   Name:        ${name}`);
+    if (!getArg("--password") && !process.env.ADMIN_BOOTSTRAP_PASSWORD) {
+      console.log(`   Password:    ${password} (Generated)`);
+    }
     console.log("=================================================");
     console.log("🔐 TOTP 2-FACTOR AUTHENTICATION SETUP");
     console.log(`   Secret Key:  ${totpSecret}`);

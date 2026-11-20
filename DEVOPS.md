@@ -268,3 +268,52 @@ docker compose -f docker-compose.prod.yml exec redis redis-cli -a <REDIS_PASSWOR
 # Restart Caddy after domain or SSL configuration change
 docker compose -f docker-compose.prod.yml restart caddy
 ```
+
+---
+
+## 11. Administrative CLIs & Emergency Runbook
+
+GoWithStudy provides zero-trust CLI utilities for Super Admin provisioning, credential rotation, data migration, and emergency account recovery:
+
+### 11.1 Super Admin Bootstrap (`admin:bootstrap`)
+Initializes the single `SUPER_ADMIN` record with a secure Argon2id password, sets up RFC 6238 TOTP 2FA with AES-256-GCM encrypted secrets, and outputs 10 cryptographically hashed single-use backup codes.
+```bash
+# Bootstrap with auto-generated credentials:
+npm run admin:bootstrap
+
+# Bootstrap with specific email or force re-initialization:
+npm run admin:bootstrap -- --email=admin@gowithstudy.edu --force
+```
+
+### 11.2 Emergency Super Admin Reset (`admin:reset`)
+Emergency out-of-band recovery CLI for resetting the Super Admin password or rotating the TOTP 2FA secret when locked out:
+```bash
+# Interactive reset:
+npm run admin:reset
+
+# Force reset with auto-generated password and new TOTP seed:
+npm run admin:reset -- --force
+```
+
+### 11.3 Legacy User Migration (`migrate:legacy`)
+Idempotently backfills legacy accounts with canonicalized emails, E.164 normalized phone numbers, `ACTIVE` account status, and `isLegacy=true` audit flags:
+```bash
+npm run migrate:legacy
+```
+
+### 11.4 Demo & Seed Account Purge (`cleanup:demo`)
+Safely scrubs pre-seeded test and demo accounts (blocked in production by default):
+```bash
+# Dry run inspection:
+npm run cleanup:demo -- --dry-run
+
+# Execute cleanup:
+npm run cleanup:demo -- --force
+```
+
+### 11.5 Database Backup Utility (`backup-db.sh`)
+Generates timestamped, compressed PostgreSQL dumps using direct `DATABASE_URL` or Docker compose:
+```bash
+./scripts/backup-db.sh
+```
+

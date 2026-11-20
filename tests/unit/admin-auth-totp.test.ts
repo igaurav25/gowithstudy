@@ -83,8 +83,8 @@ describe("Unit: RFC 6238 TOTP, AES-256-GCM & Admin Backup Codes", () => {
       const secret = generateTotpSecret();
       const encrypted = encryptTotpSecret(secret);
 
-      // Tampered tag
-      const badTag = encrypted.tag.replace(/0/g, "1");
+      // Tampered tag: modify first hex char
+      const badTag = (encrypted.tag[0] === "a" ? "b" : "a") + encrypted.tag.slice(1);
       expect(() =>
         decryptTotpSecret(encrypted.ciphertext, encrypted.iv, badTag)
       ).toThrow();

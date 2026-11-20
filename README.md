@@ -56,22 +56,22 @@ Engineering and college students constantly juggle 7+ disparate, disconnected to
 
 ## 🏛️ System Architecture
 
-CampusFlow uses an isolated containerized stack orchestrated via Docker Compose, fronted by an automated TLS Caddy reverse proxy:
+GoWithStudy uses an isolated containerized stack orchestrated via Docker Compose, fronted by an automated TLS Caddy reverse proxy:
 
 ```mermaid
 graph TD
     Client([🌐 Client / Browser]) -->|HTTPS:443 / HTTP:80| Caddy[🛡️ Caddy Reverse Proxy<br/>Auto Let's Encrypt SSL • HTTP/3 • HSTS]
     
-    subgraph CampusFlow Internal Network [Internal Docker Bridge Network]
+    subgraph GoWithStudy Internal Network [Internal Docker Bridge Network]
         Caddy -->|Proxy :3000| Web[⚡ Next.js 16 Standalone Server<br/>Node.js 22 Alpine • Non-root 'nextjs' UID 1001]
         Web -->|Port 5432| DB[(🐘 PostgreSQL 16<br/>Relational Data Store)]
         Web -->|Port 6379| Redis[(⚡ Redis 7 Alpine<br/>Rate Limiting & Cache)]
     end
 
     subgraph Storage & Security
-        DB --- VolDB[(campusflow_postgres_data)]
-        Redis --- VolRedis[(campusflow_redis_data)]
-        Caddy --- VolSSL[(campusflow_caddy_data)]
+        DB --- VolDB[(gowithstudy_postgres_data)]
+        Redis --- VolRedis[(gowithstudy_redis_data)]
+        Caddy --- VolSSL[(gowithstudy_caddy_data)]
     end
 ```
 
@@ -80,7 +80,7 @@ graph TD
 sequenceDiagram
     autonumber
     actor Student as 🎓 Student
-    participant Browser as 💻 CampusFlow UI
+    participant Browser as 💻 GoWithStudy UI
     participant Server as ⚡ Next.js API
     participant Validator as 🛡️ Magic-Byte Engine
     participant RAG as 🤖 AI & RAG Service
@@ -155,29 +155,46 @@ sequenceDiagram
 - Anti-hallucination policy: AI models are strictly prohibited from generating official administrative policies; notices must be published by verified college officials.
 - Official verification shield badges (`Verified Official`).
 
-### 10. 👑 Administrative & Moderation Console (`/dashboard/admin`)
-- Server-side RBAC: Three privilege tiers (`USER`, `MODERATOR`, `ADMIN`).
-- User account status management (Active, Suspended).
+### 10. 🛡️ Campus Moderation & Announcements (`/dashboard/admin`)
+- Accessible to verified `MODERATOR` and `ADMIN` personnel.
 - Community moderation queue with triage controls (*Open*, *Reviewing*, *Resolved*, *Rejected*).
-- System-wide announcement broadcast and security audit logging.
+- System-wide official announcement broadcast and moderation audit logging.
+
+### 11. 👨‍🏫 Verified Faculty & Educator Workspace (`/teacher`)
+- Dedicated workspace reserved for verified educators (`TEACHER` role).
+- Class lecture timetable schedules, room assignments, and academic timings.
+- Distribution of course materials, syllabus guides, and verified lecture notes.
+- Direct student academic consultation tracking and homework assignment management.
+
+### 12. 🏛️ Zero-Trust Admission Pipeline & Super Admin Portal (`/apply`, `/admin`)
+- **No Self-Service Registration**: Public self-service signup is blocked. All applicants apply via `/apply` with OTP email verification.
+- **Reference Tracking**: Human-friendly reference codes (e.g. `GWS-7X9B2K4L`) with `/apply/status` progress tracker.
+- **Dedicated Super Admin Portal**: Hardened at `/admin` (`noindex, nofollow`) featuring live admission application reviews with concurrency guards (`WHERE status = 'PENDING'`), user directory with instant suspension toggles, and immutable audit logs.
+- **Single Super Admin Invariant**: Enforced by PostgreSQL partial unique index `idx_user_single_super_admin`.
+- **RFC 6238 TOTP 2FA**: Mandatory two-step authentication for Super Admin with AES-256-GCM encrypted secrets and 10 hashed backup codes.
 
 ---
 
 ## 🛡️ Security Architecture & Hardening
 
-CampusFlow was built from day one under a strict zero-trust philosophy:
+GoWithStudy was engineered from day one under a strict zero-trust philosophy:
 
-1. **Authentication & Passwords**:
-   - Salted `bcryptjs` (cost factor 12) hashing. Plaintext passwords never touch storage or logs.
-   - Dual-token flows for Email Verification and Password Reset with cryptographic expiry (`EMAIL_TOKEN_EXPIRY_SECONDS=86400`).
-2. **Session Security & Revocation**:
-   - Signed `__Host-campusflow_session` cookies configured with `HttpOnly`, `SameSite=Lax`, and `Secure` attributes.
-   - Active database session registry supporting remote **Logout From All Devices** and selective session termination.
-3. **Magic Byte Binary Upload Inspection**:
+1. **Authentication & Password Security (Argon2id)**:
+   - High-assurance `Argon2id` password hashing (RFC 9106) with 64MB memory, 3 iterations, 4 parallelism.
+   - Transparent legacy verification: existing legacy `bcrypt` accounts are verified and automatically rehashed to Argon2id upon login.
+2. **Session Security & Admin Isolation**:
+   - Student & Educator sessions: Signed `__Host-gws_session` cookies configured with `HttpOnly`, `SameSite=Lax`, and `Secure` attributes.
+   - Super Admin sessions: Dedicated `__Host-gws_admin` cookie with `SameSite=Strict`, `HttpOnly`, `Secure`, and 8-hour maximum lifetime.
+3. **Database Concurrency & Anti-Duplication Partial Indexes**:
+   - `idx_application_unique_pending_email`: Prevents multiple pending applications from the same canonical email.
+   - `idx_application_unique_pending_phone`: Prevents duplicate mobile applications in E.164 format.
+   - `idx_application_unique_roll_number`: Guarantees roll number uniqueness per college for enrolled students.
+   - `trg_audit_log_immutable`: Append-only trigger raising exceptions on any `UPDATE` or `DELETE` against the `AuditLog` table.
+4. **Magic Byte Binary Upload Inspection**:
    - File uploads are validated at the byte-buffer level. Even if a malicious file is renamed with a `.pdf` extension, binary signature verification inspects the header (`%PDF-1.`) and rejects forged payloads.
-4. **Sliding-Window Rate Limiting**:
+5. **Sliding-Window Rate Limiting**:
    - In-memory and Redis-backed sliding-window rate limiters protect authentication, AI endpoints, and community posts from brute-force and credential-stuffing attacks.
-5. **Reverse Proxy Hardening (Caddy)**:
+6. **Reverse Proxy Hardening (Caddy)**:
    - Enforces HTTP Strict Transport Security (`Strict-Transport-Security: max-age=63072000; includeSubDomains; preload`).
    - Injects `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, and restrictive `Permissions-Policy`.
 
@@ -185,7 +202,7 @@ CampusFlow was built from day one under a strict zero-trust philosophy:
 
 ## ⚡ Performance & Accessibility (WCAG 2.1 AA)
 
-CampusFlow guarantees a fast, accessible experience for every student:
+GoWithStudy guarantees a fast, accessible experience for every student:
 - **WCAG 2.1 AA Conformance**: Tested color contrast ratios in both light and dark themes.
 - **Accessible Navigation**: Accessible `SkipToContent` link for screen readers and keyboard power-users.
 - **Resilient Error Boundaries**: Granular React error boundaries preventing full-page crashes; customized human-friendly 404 page (`app/_not-found.tsx`).
@@ -219,13 +236,17 @@ CampusFlow guarantees a fast, accessible experience for every student:
 ## 📂 Folder Structure
 
 ```
-CampusFlow/
+GoWithStudy/
 ├── .github/
 │   ├── ISSUE_TEMPLATE/        # Standardized Bug Report & Feature Request templates
 │   ├── workflows/ci.yml       # 4-Stage GitHub Actions CI/CD Pipeline
 │   └── pull_request_template.md
 ├── app/                       # Next.js 16 App Router (RSC + Client Components)
-│   ├── (auth)/                # Public Auth: /login, /signup, /forgot-password, /verify-email
+│   ├── (auth)/                # Public Auth: /login, /forgot-password, /verify-email
+│   ├── admin/                 # Hardened Super Admin Portal (/admin, /admin/login, etc.)
+│   ├── apply/                 # Admission Application & Status Tracker (/apply, /apply/status)
+│   ├── activate/              # Single-use 48h account activation & password setup (/activate)
+│   ├── teacher/               # Verified Faculty & Educator Workspace (/teacher)
 │   ├── api/                   # API Route Handlers (/api/notes/upload, etc.)
 │   ├── dashboard/             # Protected Student Modules (Notes, AI, Timetable, Community, etc.)
 │   ├── layout.tsx             # Root layout with ThemeProvider and Accessibility SkipLink
@@ -271,7 +292,7 @@ CampusFlow/
 
 ## 🗄️ Database Architecture (Prisma Schema)
 
-CampusFlow's relational database contains 20+ strictly normalized, foreign-key-constrained entities:
+GoWithStudy's relational database contains 25+ strictly normalized, foreign-key-constrained entities:
 
 ```mermaid
 erDiagram
@@ -350,9 +371,9 @@ docker compose down
 
 ---
 
-## 🧪 Automated Testing Suite (109 Tests)
+## 🧪 Automated Testing Suite (250+ Tests)
 
-CampusFlow features an automated Vitest test suite covering unit logic, integration workflows, and end-to-end user journeys:
+GoWithStudy features an enterprise-grade automated Vitest test suite covering unit logic, integration workflows, zero-trust security bounds, and end-to-end user journeys:
 
 ```bash
 # Execute full test suite
@@ -365,29 +386,11 @@ npm run test:watch
 npm run type-check
 ```
 
-### Test Suite Coverage Breakdown:
-| Test Suite | File | Tests | Focus Area |
-|---|---|---|---|
-| **Unit** | `tests/unit/auth.test.ts` | 10 | Bcrypt hashing, token generation, password strength |
-| **Unit** | `tests/unit/security.test.ts` | 17 | Magic byte validation, sliding-window rate limiting |
-| **Unit** | `tests/unit/rbac.test.ts` | 6 | User, Moderator, Admin privilege enforcement |
-| **Unit** | `tests/unit/ai-rag.test.ts` | 11 | Chunking, embedding calculation, citation accuracy |
-| **Unit** | `tests/unit/timetable-assignments.test.ts` | 9 | Recurring class calculation, deadline statuses |
-| **Integration** | `tests/integration/auth-flow.integration.test.ts` | 7 | Signup ➔ Verify ➔ Login ➔ Session persistence |
-| **Integration** | `tests/integration/notes-ownership.integration.test.ts` | 8 | Upload, ownership boundary protection, filtering |
-| **Integration** | `tests/integration/assignments-timetable.integration.test.ts` | 9 | CRUD, Kanban status transition, day sorting |
-| **Integration** | `tests/integration/internships-kanban.integration.test.ts` | 6 | Pipeline transitions, stage validation |
-| **Integration** | `tests/integration/community-moderation.integration.test.ts` | 6 | Post creation, reactions, abuse report triage |
-| **Integration** | `tests/integration/projects-team.integration.test.ts` | 5 | Project matchmaking, join request approval flow |
-| **E2E** | `tests/e2e/protected-routes.e2e.test.ts` | 7 | Unauthenticated redirect checks, role boundaries |
-| **E2E** | `tests/e2e/student-journey.e2e.test.ts` | 8 | Complete student lifecycle journey |
-| **Total** | **13 Test Files** | **109** | **100% Passing (Execution: ~1.25s)** |
-
 ---
 
 ## 🚢 CI/CD Pipeline & DevOps
 
-CampusFlow ships with enterprise deployment automation:
+GoWithStudy ships with enterprise deployment automation:
 - **GitHub Actions CI (`.github/workflows/ci.yml`)**: Automatically triggers on `push` and `pull_request` to run linting, type-checking, Vitest tests, Next.js standalone build, and Docker Buildx container verification.
 - **Production Rollout Script (`scripts/deploy.sh`)**: Creates an automated pre-migration database snapshot, runs `prisma migrate deploy`, spins up updated containers, and performs health check polling.
 - **PostgreSQL Backup Script (`scripts/backup-db.sh`)**: Dumps compressed `.sql.gz` archives with an automated 14-day rolling retention cleanup.
@@ -397,7 +400,7 @@ CampusFlow ships with enterprise deployment automation:
 
 ## 🎯 Resume & Technical Interview Highlights
 
-If you are a student or developer discussing CampusFlow in a software engineering interview:
+If you are a student or developer discussing GoWithStudy in a software engineering interview:
 
 - **Full-Stack Architecture**: Built a multi-tenant academic platform leveraging Next.js 16 App Router (Turbopack) with hybrid Server and Client components, reducing initial page load by 40%.
 - **RAG & Vector Context Search**: Implemented a Retrieval-Augmented Generation (RAG) engine that parses lecture PDFs into contextual chunks and retrieves relevant passages with source citations for conversational AI Q&A.

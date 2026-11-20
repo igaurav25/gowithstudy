@@ -3,6 +3,8 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollText, ShieldAlert, Clock } from "lucide-react";
 
+export const dynamic = "force-dynamic";
+
 export default async function AdminAuditPage() {
   const logsRes = await getAdminAuditLogsAction();
   const logs = logsRes.data?.logs || [];

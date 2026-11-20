@@ -21,6 +21,8 @@ import {
   MessageSquareQuote,
 } from "lucide-react";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Faculty Workspace | GoWithStudy",
   description: "Dedicated workspace for verified educators to manage classes, course materials, announcements, and student interactions.",

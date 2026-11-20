@@ -892,4 +892,12 @@ export const AuthService = {
   getAllUsers(): StoredUser[] {
     return Array.from(store.users.values());
   },
+
+  async saveUserDirectly(user: StoredUser): Promise<void> {
+    store.users.set(user.email.toLowerCase(), user);
+    if (user.username) {
+      store.usersByUsername.set(user.username.toLowerCase(), user.id);
+    }
+    store.saveUsersToDisk();
+  },
 };

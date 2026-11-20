@@ -454,6 +454,37 @@ export async function loginWithIdentifierAction(params: {
     return { success: false, message: "ID or password is incorrect." };
   }
 
+  // ENFORCE: Zero-Trust Account Status Checks
+  if (user.accountStatus === "PENDING_ACTIVATION") {
+    return {
+      success: false,
+      message:
+        "Your application is approved, but your account is not yet activated. Please check your email for the activation link to set your password.",
+    };
+  }
+
+  if (user.isSuspended || user.accountStatus === "SUSPENDED") {
+    return {
+      success: false,
+      message: "Your account is currently suspended. Please contact platform administration.",
+    };
+  }
+
+  if (user.accountStatus === "DEACTIVATED") {
+    return {
+      success: false,
+      message: "This account has been deactivated.",
+    };
+  }
+
+  if (!user.passwordHash) {
+    return {
+      success: false,
+      message:
+        "Password has not been set for this account. Please activate via the link sent to your email.",
+    };
+  }
+
   // Unified Password Verification (Argon2id + legacy bcrypt fallback)
   const passwordCheck = await verifyPasswordUnified(params.password, user.passwordHash);
   if (!passwordCheck.isValid) {
@@ -502,8 +533,15 @@ export async function loginWithIdentifierAction(params: {
       duration
     );
 
+    const redirectUrl =
+      user.role === "TEACHER"
+        ? "/teacher"
+        : user.role === "ADMIN" || user.role === "SUPER_ADMIN"
+        ? "/admin"
+        : "/dashboard";
+
     await setSessionCookie(token, duration);
-    return { success: true, data: { redirectUrl: "/dashboard" } };
+    return { success: true, data: { redirectUrl } };
   }
 
   // Case B: Untrusted Device / New Device -> Issue Step-Up Challenge

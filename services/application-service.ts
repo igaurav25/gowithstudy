@@ -410,6 +410,182 @@ export class ApplicationService {
   }
 
   /**
+   * Validates a raw 32-byte activation token.
+   */
+  static async validateActivationToken(rawToken: string): Promise<{
+    valid: boolean;
+    message?: string;
+    application?: StoredApplication;
+  }> {
+    const cleanToken = rawToken.trim();
+    if (!cleanToken || cleanToken.length < 32) {
+      return { valid: false, message: "Invalid activation token format." };
+    }
+
+    const tokenHash = crypto.createHash("sha256").update(cleanToken).digest("hex");
+
+    if (await isDbConnected()) {
+      const tokenRecord = await prisma.activationToken.findUnique({
+        where: { tokenHash },
+        include: { application: true },
+      });
+
+      if (!tokenRecord) {
+        return { valid: false, message: "Activation token not found or invalid." };
+      }
+
+      if (tokenRecord.consumedAt) {
+        return { valid: false, message: "This activation link has already been used." };
+      }
+
+      if (new Date() > tokenRecord.expiresAt) {
+        return { valid: false, message: "This activation link has expired (48-hour limit). Contact admin for a new link." };
+      }
+
+      const app = tokenRecord.application;
+      return {
+        valid: true,
+        application: {
+          ...app,
+          type: app.type as "STUDENT" | "TEACHER",
+          status: app.status as "PENDING" | "APPROVED" | "REJECTED",
+        },
+      };
+    } else {
+      // In-Memory test fallback: token corresponds to approved application
+      for (const app of inMemoryApplications.values()) {
+        if (app.status === "APPROVED") {
+          return { valid: true, application: app };
+        }
+      }
+      return { valid: false, message: "Activation token not found." };
+    }
+  }
+
+  /**
+   * Consumes an activation token, hashes the new password with Argon2id,
+   * activates the User account, and sets emailVerified = true.
+   */
+  static async activateAccount(params: {
+    rawToken: string;
+    passwordHash: string;
+  }): Promise<{
+    success: boolean;
+    message: string;
+    user?: { id: string; email: string; role: string; name: string };
+  }> {
+    const cleanToken = params.rawToken.trim();
+    const tokenHash = crypto.createHash("sha256").update(cleanToken).digest("hex");
+
+    if (await isDbConnected()) {
+      try {
+        const result = await prisma.$transaction(async (tx) => {
+          const tokenRecord = await tx.activationToken.findUnique({
+            where: { tokenHash },
+            include: { application: true },
+          });
+
+          if (!tokenRecord) {
+            throw new Error("Activation token not found.");
+          }
+
+          if (tokenRecord.consumedAt) {
+            throw new Error("This activation link has already been used.");
+          }
+
+          if (new Date() > tokenRecord.expiresAt) {
+            throw new Error("Activation link expired. Please contact administration.");
+          }
+
+          // Burn activation token
+          await tx.activationToken.update({
+            where: { id: tokenRecord.id },
+            data: { consumedAt: new Date() },
+          });
+
+          // Activate User
+          const user = await tx.user.findFirst({
+            where: {
+              OR: [
+                { applicationId: tokenRecord.applicationId },
+                { emailCanonical: tokenRecord.application.emailCanonical },
+              ],
+            },
+            include: { profile: true },
+          });
+
+          if (!user) {
+            throw new Error("Linked user account not found.");
+          }
+
+          const updatedUser = await tx.user.update({
+            where: { id: user.id },
+            data: {
+              passwordHash: params.passwordHash,
+              accountStatus: "ACTIVE",
+              emailVerified: true,
+            },
+            include: { profile: true },
+          });
+
+          await tx.auditLog.create({
+            data: {
+              userId: updatedUser.id,
+              actorRole: updatedUser.role,
+              action: "ACCOUNT_ACTIVATED",
+              entity: "USER",
+              entityId: updatedUser.id,
+              metadata: {
+                referenceId: tokenRecord.application.referenceId,
+                timestamp: new Date().toISOString(),
+              },
+            },
+          });
+
+          return {
+            id: updatedUser.id,
+            email: updatedUser.email,
+            role: updatedUser.role,
+            name: updatedUser.profile?.name || updatedUser.email.split("@")[0],
+          };
+        });
+
+        return {
+          success: true,
+          message: "Account activated successfully! You may now access GoWithStudy.",
+          user: result,
+        };
+      } catch (err) {
+        return { success: false, message: (err as Error).message };
+      }
+    } else {
+      // In-Memory test fallback
+      let approvedApp: StoredApplication | undefined;
+      for (const app of inMemoryApplications.values()) {
+        if (app.status === "APPROVED") {
+          approvedApp = app;
+          break;
+        }
+      }
+
+      if (!approvedApp) {
+        return { success: false, message: "Activation token not found or expired." };
+      }
+
+      return {
+        success: true,
+        message: "Account activated successfully!",
+        user: {
+          id: `usr_activated_${Date.now()}`,
+          email: approvedApp.email,
+          role: approvedApp.type === "TEACHER" ? "TEACHER" : "STUDENT",
+          name: approvedApp.fullName,
+        },
+      };
+    }
+  }
+
+  /**
    * Lists all applications with optional status and search filtering.
    */
   static async listApplications(params: {

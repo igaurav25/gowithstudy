@@ -157,8 +157,8 @@ export class AdminRecoveryService {
     }
 
     // 4. Validate new password
-    if (!input.newPassword || input.newPassword.length < 12) {
-      return { success: false, message: "New password must be at least 12 characters." };
+    if (!input.newPassword || input.newPassword.length < 6) {
+      return { success: false, message: "New password must be at least 6 characters." };
     }
     if (input.newPassword !== input.confirmPassword) {
       return { success: false, message: "Passwords do not match." };

@@ -49,7 +49,7 @@ export function AdminSetupWizard() {
   const [copiedKey, setCopiedKey] = React.useState(false);
 
   // Password strength
-  const isLengthValid = password.length >= 12;
+  const isLengthValid = password.length >= 6;
   const hasMixed = /[a-z]/.test(password) && /[A-Z]/.test(password);
   const hasDigitOrSymbol = /[0-9!@#$%^&*]/.test(password);
   const isMatch = password.length > 0 && password === confirmPassword;
@@ -71,7 +71,7 @@ export function AdminSetupWizard() {
       return;
     }
     if (!isLengthValid || !isMatch) {
-      setErrorMessage("Password must be at least 12 characters and match the confirmation.");
+      setErrorMessage("Password must be at least 6 characters and match the confirmation.");
       return;
     }
 
@@ -266,7 +266,7 @@ export function AdminSetupWizard() {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-semibold text-zinc-300 mb-1">
-                  Password (Min 12 chars)
+                  Password (Min 6 chars)
                 </label>
                 <input
                   type="password"
@@ -297,7 +297,7 @@ export function AdminSetupWizard() {
             <div className="p-2.5 rounded-xl bg-zinc-800/40 border border-zinc-800 text-[11px] text-zinc-400 space-y-1">
               <div className="flex items-center gap-1.5">
                 <div className={`w-2 h-2 rounded-full ${isLengthValid ? "bg-emerald-500" : "bg-zinc-600"}`} />
-                <span>At least 12 characters long</span>
+                <span>At least 6 characters long</span>
               </div>
               <div className="flex items-center gap-1.5">
                 <div className={`w-2 h-2 rounded-full ${hasMixed && hasDigitOrSymbol ? "bg-emerald-500" : "bg-zinc-600"}`} />

@@ -37,7 +37,7 @@ export function AdminRecoveryWizard() {
   const [backupCodes, setBackupCodes] = React.useState<string[]>([]);
   const [copiedKey, setCopiedKey] = React.useState(false);
 
-  const isPasswordValid = newPassword.length >= 12 && newPassword === confirmPassword;
+  const isPasswordValid = newPassword.length >= 6 && newPassword === confirmPassword;
 
   const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -73,7 +73,7 @@ export function AdminRecoveryWizard() {
       return;
     }
     if (!isPasswordValid) {
-      setErrorMessage("New password must be at least 12 characters and match.");
+      setErrorMessage("New password must be at least 6 characters and match.");
       return;
     }
 
@@ -194,7 +194,7 @@ export function AdminRecoveryWizard() {
             <div className="grid grid-cols-2 gap-3 pt-2">
               <div>
                 <label className="block text-xs font-semibold text-zinc-300 mb-1">
-                  New Password (Min 12 chars)
+                  New Password (Min 6 chars)
                 </label>
                 <input
                   type="password"

@@ -229,6 +229,20 @@ function getInitialDemoTimetable(userId: string): TimetableItem[] {
       notes: "Weekly team sprint progress review",
       createdAt: new Date(),
     },
+
+    // Saturday (Technical Seminar / Practical Lab)
+    {
+      id: "tt_sat_1",
+      userId,
+      subject: "Industry Seminar & Technical Skills Lab",
+      faculty: "Dept. Placement Cell",
+      day: "Saturday",
+      startTime: "10:00",
+      endTime: "11:30",
+      room: "Seminar Hall-1",
+      notes: "System design & placement interview preparation",
+      createdAt: new Date(),
+    },
   ];
 }
 

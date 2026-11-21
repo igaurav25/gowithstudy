@@ -41,8 +41,8 @@ async function bootstrapAdmin() {
   const generatedPassword = crypto.randomBytes(16).toString("base64url") + "@Gws!";
   const password = getArg("--password") || process.env.ADMIN_BOOTSTRAP_PASSWORD || generatedPassword;
 
-  if (!email || !password || password.length < 12) {
-    console.error("❌ Error: Password must be at least 12 characters.");
+  if (!email || !password || password.length < 6) {
+    console.error("❌ Error: Password must be at least 6 characters.");
     process.exit(1);
   }
 

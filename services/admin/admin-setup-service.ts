@@ -137,8 +137,8 @@ export class AdminSetupService {
     }
 
     // 3. Validate passwords
-    if (!input.password || input.password.length < 12) {
-      return { success: false, message: "Password must be at least 12 characters." };
+    if (!input.password || input.password.length < 6) {
+      return { success: false, message: "Password must be at least 6 characters." };
     }
 
     if (input.password !== input.confirmPassword) {

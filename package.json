@@ -19,6 +19,7 @@
     "db:seed": "node --experimental-strip-types prisma/seed.ts",
     "admin:bootstrap": "node --experimental-strip-types scripts/admin-bootstrap.ts",
     "admin:reset": "node --experimental-strip-types scripts/admin-reset.ts",
+    "admin:doctor": "node --experimental-strip-types scripts/admin-doctor.ts",
     "migrate:legacy": "node --experimental-strip-types scripts/migrate-legacy-users.ts",
     "cleanup:demo": "node --experimental-strip-types scripts/cleanup-demo.ts"
   },

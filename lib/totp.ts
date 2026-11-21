@@ -91,28 +91,51 @@ export function generateTotpCode(secretBase32: string, timestampMs: number = Dat
 }
 
 /**
- * Verifies an RFC 6238 TOTP code with time drift window tolerance (default ±1 step = ±30s).
+ * Verifies an RFC 6238 TOTP code with time drift window tolerance (default ±1 step = ±30s)
+ * and replay prevention against reused time steps.
+ */
+export function verifyTotpWithReplay(
+  secretBase32: string,
+  token: string,
+  window: number = 1,
+  timestampMs: number = Date.now(),
+  lastAcceptedTimeStep?: number
+): { valid: boolean; acceptedTimeStep?: number } {
+  const cleanToken = token.trim();
+  if (cleanToken.length !== 6 || !/^\d{6}$/.test(cleanToken)) {
+    return { valid: false };
+  }
+
+  const timeStep = 30; // 30 seconds
+  const currentStep = Math.floor(timestampMs / 1000 / timeStep);
+
+  for (let w = -window; w <= window; w++) {
+    const step = currentStep + w;
+    // Prevent replay attacks: rejected if this time step was already used
+    if (lastAcceptedTimeStep !== undefined && step <= lastAcceptedTimeStep) {
+      continue;
+    }
+
+    const testTime = step * timeStep * 1000;
+    const generated = generateTotpCode(secretBase32, testTime);
+    if (crypto.timingSafeEqual(Buffer.from(cleanToken), Buffer.from(generated))) {
+      return { valid: true, acceptedTimeStep: step };
+    }
+  }
+  return { valid: false };
+}
+
+/**
+ * Standard boolean TOTP verification wrapper with optional replay check.
  */
 export function verifyTotpCode(
   secretBase32: string,
   token: string,
   window: number = 1,
-  timestampMs: number = Date.now()
+  timestampMs: number = Date.now(),
+  lastAcceptedTimeStep?: number
 ): boolean {
-  const cleanToken = token.trim();
-  if (cleanToken.length !== 6 || !/^\d{6}$/.test(cleanToken)) {
-    return false;
-  }
-
-  const timeStepMs = 30 * 1000;
-  for (let w = -window; w <= window; w++) {
-    const testTime = timestampMs + w * timeStepMs;
-    const generated = generateTotpCode(secretBase32, testTime);
-    if (crypto.timingSafeEqual(Buffer.from(cleanToken), Buffer.from(generated))) {
-      return true;
-    }
-  }
-  return false;
+  return verifyTotpWithReplay(secretBase32, token, window, timestampMs, lastAcceptedTimeStep).valid;
 }
 
 /**
@@ -139,12 +162,20 @@ function getEncryptionKey(): Buffer {
 }
 
 /**
- * Encrypts Base32 TOTP secret using AES-256-GCM.
+ * Encrypts Base32 TOTP secret using AES-256-GCM with versioned key ID and optional AAD (e.g. userId).
  */
-export function encryptTotpSecret(secretBase32: string): { ciphertext: string; iv: string; tag: string } {
+export function encryptTotpSecret(
+  secretBase32: string,
+  aad?: string,
+  keyVersion: string = "v1"
+): { ciphertext: string; iv: string; tag: string; keyVersion: string } {
   const key = getEncryptionKey();
   const iv = crypto.randomBytes(12); // 96-bit IV recommended for GCM
   const cipher = crypto.createCipheriv("aes-256-gcm", key, iv);
+
+  if (aad) {
+    cipher.setAAD(Buffer.from(aad, "utf8"));
+  }
 
   let encrypted = cipher.update(secretBase32, "utf8", "hex");
   encrypted += cipher.final("hex");
@@ -154,20 +185,44 @@ export function encryptTotpSecret(secretBase32: string): { ciphertext: string; i
     ciphertext: encrypted,
     iv: iv.toString("hex"),
     tag,
+    keyVersion,
   };
 }
 
 /**
- * Decrypts Base32 TOTP secret using AES-256-GCM.
+ * Decrypts Base32 TOTP secret using AES-256-GCM with optional AAD validation.
  */
-export function decryptTotpSecret(ciphertext: string, iv: string, tag: string): string {
+export function decryptTotpSecret(
+  ciphertext: string,
+  iv: string,
+  tag: string,
+  aad?: string
+): string {
   const key = getEncryptionKey();
   const decipher = crypto.createDecipheriv("aes-256-gcm", key, Buffer.from(iv, "hex"));
   decipher.setAuthTag(Buffer.from(tag, "hex"));
 
+  if (aad) {
+    decipher.setAAD(Buffer.from(aad, "utf8"));
+  }
+
   let decrypted = decipher.update(ciphertext, "hex", "utf8");
   decrypted += decipher.final("utf8");
   return decrypted;
+}
+
+/**
+ * Canary encryption round-trip verification used by admin:doctor.
+ */
+export function verifyEncryptionCanary(): boolean {
+  try {
+    const canaryPayload = "GWS_CANARY_TEST_ENCRYPTION_" + Date.now();
+    const enc = encryptTotpSecret(canaryPayload, "canary_user");
+    const dec = decryptTotpSecret(enc.ciphertext, enc.iv, enc.tag, "canary_user");
+    return dec === canaryPayload;
+  } catch {
+    return false;
+  }
 }
 
 // ==============================================================================

@@ -334,4 +334,18 @@ If an administrator loses their credentials or authenticator device:
 4. Set a new password and re-enroll TOTP 2FA. This immediately revokes all active admin sessions.
 5. **Remove or rotate `ADMIN_RECOVERY_TOKEN` from Vercel Environment Variables and redeploy**.
 
+### 11.8 Diagnostic Healthcheck (`admin:doctor`)
+Read-only diagnostic audit to verify platform readiness without logging secrets:
+```bash
+npm run admin:doctor
+```
+Validates:
+- High-entropy `AUTH_SECRET` & `APP_ENCRYPTION_KEY`
+- AES-256-GCM canary encryption round-trip
+- Database connectivity & partial unique index `idx_user_single_super_admin`
+- Exact single Super Admin invariant (fails if count > 1)
+- Upstash/Redis distributed ping
+- System wall-clock timestamp synchronization for RFC 6238 TOTP
+
+
 

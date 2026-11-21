@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { getAdminSession, getSession } from "@/lib/auth";
-import { requireAdminPermission } from "@/lib/guards";
+import { requireAdmin, requireAdminPermission } from "@/lib/guards";
 import {
   ShieldCheck,
   Users,
@@ -28,14 +28,15 @@ export default async function AdminLayout({
 }) {
   let adminUser: { email: string; role: string; name?: string } | null = null;
   try {
-    const auth = await requireAdminPermission("ADMIN_PORTAL_ACCESS");
+    const auth = await requireAdmin();
+    await requireAdminPermission("ADMIN_PORTAL_ACCESS");
     adminUser = {
       email: auth.adminUser.email,
-      role: auth.role,
+      role: auth.adminUser.role,
       name: auth.adminUser.name,
     };
   } catch {
-    redirect("/admin/login");
+    redirect("/login?mode=admin");
   }
 
   return (

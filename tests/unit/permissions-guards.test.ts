@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { hasPermission, getRoleForApplicationType, Permission } from "@/lib/permissions";
-import { requireUser, requireAdminPermission, UnauthorizedError, ForbiddenError } from "@/lib/guards";
+import { requireUser, requireAdmin, requireAdminPermission, UnauthorizedError, ForbiddenError } from "@/lib/guards";
 import * as authModule from "@/lib/auth";
 import { AuthService, StoredUser } from "@/services/auth-service";
 import { startSignupFlowAction } from "@/features/auth/high-assurance-actions";
@@ -248,6 +248,56 @@ describe("Unit: Central Permissions Matrix & Guards", () => {
 
       // Forbid ADMIN from provisioning other admins (SUPER_ADMIN only)
       await expect(requireAdminPermission("ADMIN_PROVISION")).rejects.toThrow(ForbiddenError);
+    });
+
+    it("should enforce requireAdmin() strictly for SUPER_ADMIN role and reject normal users or suspended admins", async () => {
+      // 1. Unauthenticated rejects
+      vi.spyOn(authModule, "getAdminSession").mockResolvedValue(null);
+      vi.spyOn(authModule, "getSession").mockResolvedValue(null);
+      await expect(requireAdmin()).rejects.toThrow(UnauthorizedError);
+
+      // 2. Student session rejects with ForbiddenError
+      vi.spyOn(authModule, "getAdminSession").mockResolvedValue({
+        userId: "usr_student_01",
+        email: "student@dtu.ac.in",
+        name: "Student",
+        role: "STUDENT",
+        sessionId: "ses_s1",
+      });
+      vi.spyOn(AuthService, "getUserById").mockResolvedValue({
+        id: "usr_student_01",
+        email: "student@dtu.ac.in",
+        role: "STUDENT",
+        accountStatus: "ACTIVE",
+        isSuspended: false,
+      } as StoredUser);
+
+      await expect(requireAdmin()).rejects.toThrow(ForbiddenError);
+
+      // 3. Suspended Super Admin rejects
+      vi.spyOn(AuthService, "getUserById").mockResolvedValue({
+        id: "usr_super_01",
+        email: "super@gowithstudy.app",
+        role: "SUPER_ADMIN",
+        accountStatus: "SUSPENDED",
+        isSuspended: true,
+      } as StoredUser);
+
+      await expect(requireAdmin()).rejects.toThrow(ForbiddenError);
+
+      // 4. Active Super Admin succeeds
+      vi.spyOn(AuthService, "getUserById").mockResolvedValue({
+        id: "usr_super_01",
+        email: "super@gowithstudy.app",
+        role: "SUPER_ADMIN",
+        accountStatus: "ACTIVE",
+        isSuspended: false,
+        name: "Chief Super Admin",
+      } as StoredUser);
+
+      const authed = await requireAdmin();
+      expect(authed.adminUser.role).toBe("SUPER_ADMIN");
+      expect(authed.adminUser.email).toBe("super@gowithstudy.app");
     });
   });
 

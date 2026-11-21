@@ -400,5 +400,22 @@ describe("Unit: Super Admin Unified Login, Setup & Recovery Access Patch", () =>
       expect(content).toContain("isRecoveryAllowed");
       expect(content).toContain("notFound()");
     });
+
+    it("should verify admin layout enforces central requireAdmin guard", () => {
+      const layoutPath = path.join(rootDir, "app/admin/(portal)/layout.tsx");
+      expect(fs.existsSync(layoutPath)).toBe(true);
+
+      const content = fs.readFileSync(layoutPath, "utf-8");
+      expect(content).toContain("requireAdmin");
+      expect(content).toContain("redirect(");
+    });
+
+    it("should verify static proxy.ts redirects /admin to /login?mode=admin for unauthenticated requests", () => {
+      const proxyPath = path.join(rootDir, "proxy.ts");
+      expect(fs.existsSync(proxyPath)).toBe(true);
+
+      const content = fs.readFileSync(proxyPath, "utf-8");
+      expect(content).toContain("/login?mode=admin");
+    });
   });
 });

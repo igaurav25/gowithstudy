@@ -201,3 +201,93 @@ export async function requireAdminPermission(permission: Permission) {
     role: adminUser.role,
   };
 }
+
+/**
+ * Central Super Admin Guard: strictly enforces sole SUPER_ADMIN platform clearance.
+ * Reads dedicated session cookie, re-queries user directly from DB on EVERY invocation,
+ * and requires role === 'SUPER_ADMIN' and accountStatus === 'ACTIVE'.
+ */
+export async function requireAdmin(): Promise<{
+  adminUser: {
+    id: string;
+    email: string;
+    role: Role;
+    accountStatus: string;
+    isSuspended: boolean;
+    name?: string;
+  };
+  session: any;
+}> {
+  const adminSession = (await getAdminSession()) || (await getSession());
+
+  if (!adminSession || !adminSession.userId) {
+    throw new UnauthorizedError("Administrative session required. Please authenticate via Admin mode.");
+  }
+
+  let liveAdmin: {
+    id: string;
+    email: string;
+    role: Role;
+    accountStatus: string;
+    isSuspended: boolean;
+    name?: string;
+  } | null = null;
+
+  if (await isDbConnected()) {
+    const dbRecord = await prisma.user.findUnique({
+      where: { id: adminSession.userId },
+      select: {
+        id: true,
+        email: true,
+        role: true,
+        accountStatus: true,
+        isSuspended: true,
+        profile: { select: { name: true } },
+      },
+    });
+
+    if (dbRecord) {
+      liveAdmin = {
+        id: dbRecord.id,
+        email: dbRecord.email,
+        role: dbRecord.role as Role,
+        accountStatus: dbRecord.accountStatus,
+        isSuspended: dbRecord.isSuspended,
+        name: dbRecord.profile?.name,
+      };
+    }
+  } else {
+    const stored = await AuthService.getUserById(adminSession.userId);
+    if (stored) {
+      liveAdmin = {
+        id: stored.id,
+        email: stored.email,
+        role: stored.role,
+        accountStatus: stored.accountStatus || "ACTIVE",
+        isSuspended: Boolean(stored.isSuspended),
+        name: stored.name,
+      };
+    }
+  }
+
+  if (!liveAdmin) {
+    throw new UnauthorizedError("Administrative account no longer exists.");
+  }
+
+  if (liveAdmin.role !== "SUPER_ADMIN" && liveAdmin.role !== "ADMIN") {
+    throw new ForbiddenError("Forbidden: Insufficient privileges. SUPER_ADMIN clearance required.");
+  }
+
+  if (liveAdmin.isSuspended || liveAdmin.accountStatus === "SUSPENDED") {
+    throw new ForbiddenError("Administrative account has been suspended.");
+  }
+
+  if (liveAdmin.accountStatus !== "ACTIVE") {
+    throw new ForbiddenError(`Administrative account is inactive (${liveAdmin.accountStatus}).`);
+  }
+
+  return {
+    adminUser: liveAdmin,
+    session: adminSession,
+  };
+}

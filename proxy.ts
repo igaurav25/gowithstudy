@@ -158,6 +158,21 @@ export async function proxy(request: NextRequest) {
     }
   }
 
+  // Admin portal routes: /admin and /admin/* (UX redirect only; real auth in server guard)
+  if (pathname === "/admin" || pathname.startsWith("/admin/")) {
+    if (pathname === "/admin/login") {
+      return applySecurityHeaders(NextResponse.redirect(new URL("/login?mode=admin", request.url)));
+    }
+    const adminToken =
+      request.cookies.get("__Host-gws_admin")?.value ||
+      request.cookies.get("gws_admin")?.value;
+    if (!adminToken) {
+      const adminLoginUrl = new URL("/login", request.url);
+      adminLoginUrl.searchParams.set("mode", "admin");
+      return applySecurityHeaders(NextResponse.redirect(adminLoginUrl));
+    }
+  }
+
   // 6. Auth pages (login/signup): Defeat infinite navigation loops
   if (pathname === "/login" || pathname === "/signup") {
     const isExplicitReauth =

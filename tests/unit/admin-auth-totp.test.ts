@@ -3,13 +3,20 @@ import {
   generateTotpSecret,
   generateTotpCode,
   verifyTotpCode,
+  verifyTotpWithReplay,
   encryptTotpSecret,
   decryptTotpSecret,
   generateBackupCodes,
   hashBackupCode,
   verifyAndConsumeBackupCode,
   generateTotpUri,
+  verifyEncryptionCanary,
 } from "@/lib/totp";
+import {
+  checkAdminProgressiveBackoff,
+  recordAdminFailedAttempt,
+  resetAdminFailedAttempts,
+} from "@/lib/redis-rate-limit";
 
 describe("Unit: RFC 6238 TOTP, AES-256-GCM & Admin Backup Codes", () => {
   describe("RFC 6238 TOTP Generation & Verification", () => {
@@ -42,6 +49,21 @@ describe("Unit: RFC 6238 TOTP, AES-256-GCM & Admin Backup Codes", () => {
       const futureTime = now + 25 * 1000;
       const codeFuture = generateTotpCode(secret, futureTime);
       expect(verifyTotpCode(secret, codeFuture, 1, now)).toBe(true);
+
+      // Replay prevention test: once a time step is accepted, reused code is rejected
+      const replayCheck1 = verifyTotpWithReplay(secret, codeCurrent, 1, now);
+      expect(replayCheck1.valid).toBe(true);
+      expect(replayCheck1.acceptedTimeStep).toBeDefined();
+
+      // Subsequent attempt with same code and step <= acceptedTimeStep is blocked
+      const replayCheck2 = verifyTotpWithReplay(
+        secret,
+        codeCurrent,
+        1,
+        now,
+        replayCheck1.acceptedTimeStep
+      );
+      expect(replayCheck2.valid).toBe(false);
 
       // Reject codes from outside drift window (e.g. 2 minutes ago)
       const oldTime = now - 120 * 1000;
@@ -79,6 +101,30 @@ describe("Unit: RFC 6238 TOTP, AES-256-GCM & Admin Backup Codes", () => {
       expect(decrypted).toBe(secret);
     });
 
+    it("should encrypt and decrypt with AAD binding (user ID) and fail if AAD mismatches", () => {
+      const secret = generateTotpSecret();
+      const userId = "usr_super_admin_42";
+      const encrypted = encryptTotpSecret(secret, userId);
+
+      // Decrypt with correct AAD succeeds
+      const decrypted = decryptTotpSecret(
+        encrypted.ciphertext,
+        encrypted.iv,
+        encrypted.tag,
+        userId
+      );
+      expect(decrypted).toBe(secret);
+
+      // Decrypt with incorrect AAD fails authentication
+      expect(() =>
+        decryptTotpSecret(encrypted.ciphertext, encrypted.iv, encrypted.tag, "usr_attacker")
+      ).toThrow();
+    });
+
+    it("should verify encryption canary round trip", () => {
+      expect(verifyEncryptionCanary()).toBe(true);
+    });
+
     it("should throw authentication error when ciphertext or tag is tampered", () => {
       const secret = generateTotpSecret();
       const encrypted = encryptTotpSecret(secret);
@@ -109,6 +155,42 @@ describe("Unit: RFC 6238 TOTP, AES-256-GCM & Admin Backup Codes", () => {
       const result2 = verifyAndConsumeBackupCode(codeToUse, result1.remainingHashedCodes);
       expect(result2.valid).toBe(false);
       expect(result2.remainingHashedCodes).toHaveLength(9);
+    });
+  });
+
+  describe("Progressive Backoff & Non-Lockout Protection", () => {
+    it("should enforce progressive backoff delays without permanent account lock", async () => {
+      const testIp = "192.168.1.99";
+      await resetAdminFailedAttempts(testIp);
+
+      // 0 attempts -> 0s delay
+      const initial = await checkAdminProgressiveBackoff(testIp);
+      expect(initial.allowed).toBe(true);
+      expect(initial.delaySeconds).toBe(0);
+      expect(initial.requiresTurnstile).toBe(false);
+
+      // Record 3 failed attempts -> 5s delay + Turnstile
+      await recordAdminFailedAttempt(testIp);
+      await recordAdminFailedAttempt(testIp);
+      await recordAdminFailedAttempt(testIp);
+
+      const after3 = await checkAdminProgressiveBackoff(testIp);
+      expect(after3.allowed).toBe(true);
+      expect(after3.delaySeconds).toBe(5);
+      expect(after3.requiresTurnstile).toBe(true);
+
+      // Record more attempts -> increases to 15s delay
+      await recordAdminFailedAttempt(testIp);
+      await recordAdminFailedAttempt(testIp);
+      const after5 = await checkAdminProgressiveBackoff(testIp);
+      expect(after5.delaySeconds).toBe(15);
+      expect(after5.requiresTurnstile).toBe(true);
+
+      // Reset on success
+      await resetAdminFailedAttempts(testIp);
+      const afterReset = await checkAdminProgressiveBackoff(testIp);
+      expect(afterReset.delaySeconds).toBe(0);
+      expect(afterReset.requiresTurnstile).toBe(false);
     });
   });
 });

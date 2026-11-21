@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { getSession } from "@/lib/auth";
 import { assertRole, hasRequiredRole } from "@/lib/rbac";
+import { requireAdmin } from "@/lib/guards";
 import { AdminService } from "@/services/admin-service";
 import {
   updateUserRoleSchema,
@@ -28,12 +29,7 @@ export async function updateUserRoleAction(
   input: UpdateUserRoleInput
 ): Promise<ActionResponse> {
   try {
-    const session = await getSession();
-    if (!session) {
-      return { success: false, error: "Unauthorized. Please log in." };
-    }
-
-    assertRole(session.role, "ADMIN");
+    const { adminUser } = await requireAdmin();
 
     const parsed = updateUserRoleSchema.safeParse(input);
     if (!parsed.success) {
@@ -44,7 +40,7 @@ export async function updateUserRoleAction(
     }
 
     // Prevent demoting oneself
-    if (parsed.data.targetUserId === session.userId && parsed.data.role !== "ADMIN") {
+    if (parsed.data.targetUserId === adminUser.id && parsed.data.role !== "SUPER_ADMIN" && parsed.data.role !== "ADMIN") {
       return {
         success: false,
         error: "Admins cannot demote their own active administrative account.",
@@ -52,12 +48,13 @@ export async function updateUserRoleAction(
     }
 
     const updated = await AdminService.updateUserRole(
-      session.userId,
+      adminUser.id,
       parsed.data.targetUserId,
       parsed.data.role,
       parsed.data.reason
     );
 
+    revalidatePath("/admin/users");
     revalidatePath("/dashboard/admin");
     return { success: true, data: updated };
   } catch (err: unknown) {
@@ -74,12 +71,7 @@ export async function toggleUserStatusAction(
   input: ToggleUserStatusInput
 ): Promise<ActionResponse> {
   try {
-    const session = await getSession();
-    if (!session) {
-      return { success: false, error: "Unauthorized. Please log in." };
-    }
-
-    assertRole(session.role, "ADMIN");
+    const { adminUser } = await requireAdmin();
 
     const parsed = toggleUserStatusSchema.safeParse(input);
     if (!parsed.success) {
@@ -89,7 +81,7 @@ export async function toggleUserStatusAction(
       };
     }
 
-    if (parsed.data.targetUserId === session.userId) {
+    if (parsed.data.targetUserId === adminUser.id) {
       return {
         success: false,
         error: "Admins cannot suspend their own active account.",
@@ -97,12 +89,13 @@ export async function toggleUserStatusAction(
     }
 
     const updated = await AdminService.toggleUserSuspension(
-      session.userId,
+      adminUser.id,
       parsed.data.targetUserId,
       parsed.data.isSuspended,
       parsed.data.reason
     );
 
+    revalidatePath("/admin/users");
     revalidatePath("/dashboard/admin");
     return { success: true, data: updated };
   } catch (err: unknown) {

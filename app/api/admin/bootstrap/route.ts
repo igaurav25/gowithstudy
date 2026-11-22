@@ -66,10 +66,10 @@ async function handleBootstrap(req: NextRequest) {
       select: { id: true, email: true },
     });
 
-    if (existingSuper) {
+    if (existingSuper && existingSuper.email.toLowerCase() !== email.toLowerCase()) {
       return NextResponse.json(
         {
-          error: "Super Admin already exists. Bootstrap route is permanently closed.",
+          error: "A different Super Admin already exists in database.",
           email: existingSuper.email,
         },
         { status: 403 }
@@ -78,10 +78,10 @@ async function handleBootstrap(req: NextRequest) {
   } else {
     const list = await AuthService.listAllUsers();
     const existingSuper = list.find((u) => u.role === "SUPER_ADMIN");
-    if (existingSuper) {
+    if (existingSuper && existingSuper.email.toLowerCase() !== email.toLowerCase()) {
       return NextResponse.json(
         {
-          error: "Super Admin already exists. Bootstrap route is permanently closed.",
+          error: "A different Super Admin already exists in store.",
           email: existingSuper.email,
         },
         { status: 403 }
@@ -102,6 +102,41 @@ async function handleBootstrap(req: NextRequest) {
 
     if (dbConnected) {
       const user = await prisma.$transaction(async (tx) => {
+        const existing = await tx.user.findFirst({
+          where: { OR: [{ email: email.trim() }, { emailCanonical: canonicalEmail }] },
+        });
+
+        if (existing) {
+          const u = await tx.user.update({
+            where: { id: existing.id },
+            data: {
+              role: "SUPER_ADMIN",
+              accountStatus: "ACTIVE",
+              passwordHash,
+              emailVerified: true,
+              adminSecurity: {
+                upsert: {
+                  create: {
+                    totpSecretEnc: encryptedSecret.ciphertext,
+                    totpIv: encryptedSecret.iv,
+                    totpTag: encryptedSecret.tag,
+                    totpEnabled: true,
+                    backupCodes: hashedBackupCodes,
+                  },
+                  update: {
+                    totpSecretEnc: encryptedSecret.ciphertext,
+                    totpIv: encryptedSecret.iv,
+                    totpTag: encryptedSecret.tag,
+                    totpEnabled: true,
+                    backupCodes: hashedBackupCodes,
+                  },
+                },
+              },
+            },
+          });
+          return u;
+        }
+
         const u = await tx.user.create({
           data: {
             email,

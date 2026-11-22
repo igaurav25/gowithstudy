@@ -15,14 +15,16 @@ export async function isDbConnected(): Promise<boolean> {
   }
 
   try {
-    // 150ms ultra-fast probe
+    // Cloud database connection probe (5000ms to allow TLS handshake & cold start)
+    const timeoutMs = process.env.VERCEL ? 5000 : 1000;
     const probe = prisma.$queryRaw`SELECT 1`;
     const timeout = new Promise<never>((_, reject) =>
-      setTimeout(() => reject(new Error("DB probe timeout")), 150)
+      setTimeout(() => reject(new Error("DB probe timeout")), timeoutMs)
     );
     await Promise.race([probe, timeout]);
     isAvailable = true;
-  } catch {
+  } catch (err) {
+    console.warn("[DB PROBE]", (err as Error).message);
     isAvailable = false;
   }
 

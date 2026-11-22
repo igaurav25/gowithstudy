@@ -25,6 +25,8 @@ async function resetAdmin() {
   }
 
   const getArg = (flag: string) => {
+    const withEq = args.find((a) => a.startsWith(`${flag}=`));
+    if (withEq) return withEq.slice(`${flag}=`.length);
     const idx = args.indexOf(flag);
     return idx !== -1 && args[idx + 1] ? args[idx + 1] : undefined;
   };

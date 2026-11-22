@@ -64,7 +64,7 @@ export class AdminSetupService {
   static async sendSetupEmailOtp(
     email: string,
     clientIp: string
-  ): Promise<{ success: boolean; message: string; challengeId?: string }> {
+  ): Promise<{ success: boolean; message: string; challengeId?: string; previewCode?: string }> {
     const allowed = await this.isSetupAllowed();
     if (!allowed) {
       return { success: false, message: "Admin setup is unavailable." };

@@ -73,6 +73,7 @@ export class OtpChallengeStore {
   }): Promise<{
     success: boolean;
     challengeId?: string;
+    previewCode?: string;
     cooldownSeconds?: number;
     error?: string;
     sendResult?: SendOtpResult;

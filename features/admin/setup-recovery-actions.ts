@@ -19,13 +19,17 @@ async function getClientIp(): Promise<string> {
  */
 export async function sendAdminSetupOtpAction(
   email: string
-): Promise<ActionResult<{ challengeId?: string }>> {
+): Promise<ActionResult<{ challengeId?: string; previewCode?: string }>> {
   const ip = await getClientIp();
   const res = await AdminSetupService.sendSetupEmailOtp(email, ip);
   if (!res.success) {
     return { success: false, message: res.message };
   }
-  return { success: true, message: res.message, data: { challengeId: res.challengeId } };
+  return {
+    success: true,
+    message: res.message,
+    data: { challengeId: res.challengeId, previewCode: (res as any).previewCode },
+  };
 }
 
 /**

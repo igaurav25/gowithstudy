@@ -28,6 +28,7 @@ export function AdminSetupWizard() {
   const [step, setStep] = React.useState<"DETAILS" | "OTP" | "TOTP_ENROLL" | "SUCCESS">("DETAILS");
   const [isPending, setIsPending] = React.useState(false);
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
+  const [otpMessage, setOtpMessage] = React.useState<string | null>(null);
 
   // Form inputs
   const [setupToken, setSetupToken] = React.useState("");
@@ -79,6 +80,12 @@ export function AdminSetupWizard() {
     try {
       const res = await sendAdminSetupOtpAction(email.trim());
       if (res.success) {
+        if (res.data?.previewCode) {
+          setEmailOtp(res.data.previewCode);
+        }
+        if (res.message) {
+          setOtpMessage(res.message);
+        }
         setStep("OTP");
       } else {
         setErrorMessage(res.message || null);
@@ -325,7 +332,9 @@ export function AdminSetupWizard() {
         {step === "OTP" && (
           <div className="space-y-4">
             <div className="p-3.5 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-xs text-indigo-300">
-              A 6-digit verification code was dispatched to <strong>{email}</strong>. Enter it below to prove mailbox ownership.
+              {otpMessage || (
+                <>A 6-digit verification code was dispatched to <strong>{email}</strong>. Enter it below to prove mailbox ownership.</>
+              )}
             </div>
 
             <div className="py-2">

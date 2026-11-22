@@ -165,9 +165,12 @@ export class OtpChallengeStore {
       };
     }
 
+    const isMockDelivery = !process.env.RESEND_API_KEY || process.env.NODE_ENV === "test";
+
     return {
       success: true,
       challengeId,
+      previewCode: isMockDelivery ? code : undefined,
       cooldownSeconds: this.getCooldownSeconds(resendCount),
       sendResult,
     };

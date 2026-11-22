@@ -86,10 +86,15 @@ export class AdminSetupService {
       return { success: false, message: challenge.error || "Failed to send verification code." };
     }
 
+    const previewHint = (!process.env.RESEND_API_KEY && (challenge as any).previewCode)
+      ? ` (Delivery simulated: OTP is ${(challenge as any).previewCode})`
+      : "";
+
     return {
       success: true,
-      message: `Verification code dispatched to ${cleanEmail}.`,
+      message: `Verification code dispatched to ${cleanEmail}.${previewHint}`,
       challengeId: challenge.challengeId,
+      previewCode: (challenge as any).previewCode,
     };
   }
 

@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { isDbConnected } from "@/lib/db-check";
+import { AuthService } from "@/services/auth-service";
 import { constantTimeCompare } from "@/lib/constant-time";
 import { hashPasswordArgon2 } from "@/lib/crypto-auth";
 import {
@@ -55,20 +57,36 @@ async function handleBootstrap(req: NextRequest) {
     );
   }
 
-  // Check if a SUPER_ADMIN already exists in database
-  const existingSuper = await prisma.user.findFirst({
-    where: { role: "SUPER_ADMIN" },
-    select: { id: true, email: true },
-  });
+  const dbConnected = await isDbConnected();
 
-  if (existingSuper) {
-    return NextResponse.json(
-      {
-        error: "Super Admin already exists. Bootstrap route is permanently closed.",
-        email: existingSuper.email,
-      },
-      { status: 403 }
-    );
+  if (dbConnected) {
+    // Check if a SUPER_ADMIN already exists in database
+    const existingSuper = await prisma.user.findFirst({
+      where: { role: "SUPER_ADMIN" },
+      select: { id: true, email: true },
+    });
+
+    if (existingSuper) {
+      return NextResponse.json(
+        {
+          error: "Super Admin already exists. Bootstrap route is permanently closed.",
+          email: existingSuper.email,
+        },
+        { status: 403 }
+      );
+    }
+  } else {
+    const list = await AuthService.listAllUsers();
+    const existingSuper = list.find((u) => u.role === "SUPER_ADMIN");
+    if (existingSuper) {
+      return NextResponse.json(
+        {
+          error: "Super Admin already exists. Bootstrap route is permanently closed.",
+          email: existingSuper.email,
+        },
+        { status: 403 }
+      );
+    }
   }
 
   const canonicalEmail = canonicalizeEmail(email);
@@ -80,63 +98,101 @@ async function handleBootstrap(req: NextRequest) {
   const totpUri = generateTotpUri(email, totpSecret);
 
   try {
-    const user = await prisma.$transaction(async (tx) => {
-      const u = await tx.user.create({
-        data: {
-          email,
-          emailCanonical: canonicalEmail,
-          passwordHash,
-          role: "SUPER_ADMIN",
-          accountStatus: "ACTIVE",
-          emailVerified: true,
-          isLegacy: false,
-          profile: {
-            create: {
-              name,
-              college: "GoWithStudy Central Governance",
-              course: "Platform Administration",
-              branch: "Executive Office",
-              year: 4,
-              semester: 8,
-            },
-          },
-          adminSecurity: {
-            create: {
-              totpSecretEnc: encryptedSecret.ciphertext,
-              totpIv: encryptedSecret.iv,
-              totpTag: encryptedSecret.tag,
-              totpEnabled: true,
-              backupCodes: hashedBackupCodes,
-            },
-          },
-        },
-      });
+    let userId = `usr_super_${Date.now()}`;
 
-      await tx.auditLog.create({
-        data: {
-          userId: u.id,
-          actorRole: "SUPER_ADMIN",
-          action: "SUPER_ADMIN_BOOTSTRAP_DIRECT",
-          entity: "USER",
-          entityId: u.id,
-          metadata: {
+    if (dbConnected) {
+      const user = await prisma.$transaction(async (tx) => {
+        const u = await tx.user.create({
+          data: {
+            email,
             emailCanonical: canonicalEmail,
-            timestamp: new Date().toISOString(),
+            passwordHash,
+            role: "SUPER_ADMIN",
+            accountStatus: "ACTIVE",
+            emailVerified: true,
+            isLegacy: false,
+            profile: {
+              create: {
+                name,
+                college: "GoWithStudy Central Governance",
+                course: "Platform Administration",
+                branch: "Executive Office",
+                year: 4,
+                semester: 8,
+              },
+            },
+            adminSecurity: {
+              create: {
+                totpSecretEnc: encryptedSecret.ciphertext,
+                totpIv: encryptedSecret.iv,
+                totpTag: encryptedSecret.tag,
+                totpEnabled: true,
+                backupCodes: hashedBackupCodes,
+              },
+            },
           },
-        },
-      });
+        });
 
-      return u;
-    });
+        await tx.auditLog.create({
+          data: {
+            userId: u.id,
+            actorRole: "SUPER_ADMIN",
+            action: "SUPER_ADMIN_BOOTSTRAP_DIRECT",
+            entity: "USER",
+            entityId: u.id,
+            metadata: {
+              emailCanonical: canonicalEmail,
+              timestamp: new Date().toISOString(),
+            },
+          },
+        });
+
+        return u;
+      });
+      userId = user.id;
+    } else {
+      const createdUser = {
+        id: userId,
+        name,
+        email,
+        emailCanonical: canonicalEmail,
+        username: "gaurav",
+        phone: "+919876543210",
+        phoneE164: "+919876543210",
+        passwordHash,
+        role: "SUPER_ADMIN" as const,
+        accountStatus: "ACTIVE" as const,
+        isSuspended: false,
+        emailVerified: true,
+        phoneVerified: true,
+        isLegacy: false,
+        college: "GoWithStudy Central Governance",
+        course: "Administration",
+        branch: "Executive Office",
+        year: 4,
+        semester: 8,
+        createdAt: new Date(),
+        adminSecurity: {
+          totpSecretEnc: encryptedSecret.ciphertext,
+          totpIv: encryptedSecret.iv,
+          totpTag: encryptedSecret.tag,
+          totpEnabled: true,
+          backupCodes: hashedBackupCodes,
+        },
+      };
+
+      await AuthService.saveUserDirectly(createdUser as any);
+    }
 
     return NextResponse.json({
       success: true,
-      message: "Super Admin successfully provisioned in PostgreSQL database!",
+      message: "Super Admin successfully provisioned!",
       user: {
-        id: user.id,
-        email: user.email,
+        id: userId,
+        email,
         name,
-        role: user.role,
+        role: "SUPER_ADMIN",
+        storage: dbConnected ? "PostgreSQL" : "Store",
       },
       totp: {
         secret: totpSecret,
@@ -146,7 +202,7 @@ async function handleBootstrap(req: NextRequest) {
     });
   } catch (err) {
     return NextResponse.json(
-      { error: "Database provisioning failed", details: (err as Error).message },
+      { error: "Provisioning failed", details: (err as Error).message },
       { status: 500 }
     );
   }
